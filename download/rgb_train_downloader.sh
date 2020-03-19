@@ -175,7 +175,7 @@ for i in ${files[@]}; do
   rm -f $shortname # remove zip file
   echo "Downloading: "$shortname
 
-  wget 's3.eu-central-1.amazonaws.com/avg-kitti/raw_data/'$fullname
+  curl -O 's3.eu-central-1.amazonaws.com/avg-kitti/raw_data/'$fullname
   unzip -o $shortname
   mv $datadate'/'$i'_sync' $basedir$i'_sync'
   rmdir $datadate
