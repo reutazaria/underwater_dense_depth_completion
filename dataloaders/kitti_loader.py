@@ -84,8 +84,15 @@ def get_paths_and_transform(split, args):
                 args.data_folder,
                 "depth_selection/val_selection_cropped/groundtruth_depth/*.png"
             )
+            # use for validation
+            # glob_rgb = os.path.join(
+            #    args.data_folder,
+            #    "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png"
+            # )
+
             def get_rgb_paths(p):
                 return p.replace("groundtruth_depth","image")
+
     elif split == "test_completion":
         transform = no_transform
         glob_d = os.path.join(
@@ -109,8 +116,10 @@ def get_paths_and_transform(split, args):
     if glob_gt is not None:
         # train or val-full or val-select
         paths_d = sorted(glob.glob(glob_d)) 
-        paths_gt = sorted(glob.glob(glob_gt)) 
+        paths_gt = sorted(glob.glob(glob_gt))
         paths_rgb = [get_rgb_paths(p) for p in paths_gt]
+        # use for validation
+        # paths_rgb = sorted(glob.glob(glob_rgb))
     else:  
         # test only has d or rgb
         paths_rgb = sorted(glob.glob(glob_rgb))
@@ -129,8 +138,8 @@ def get_paths_and_transform(split, args):
         raise (RuntimeError("Requested rgb images but none was found"))
     if len(paths_rgb) == 0 and args.use_g:
         raise (RuntimeError("Requested gray images but no rgb was found"))
-    if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
-        raise (RuntimeError("Produced different sizes for datasets"))
+    # if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
+    #     raise (RuntimeError("Produced different sizes for datasets"))
 
     paths = {"rgb": paths_rgb, "d": paths_d, "gt": paths_gt}
     return paths, transform
@@ -289,8 +298,9 @@ class KittiDepth(data.Dataset):
     def __getraw__(self, index):
         rgb = rgb_read(self.paths['rgb'][index]) if \
             (self.paths['rgb'][index] is not None and (self.args.use_rgb or self.args.use_g)) else None
-        sparse = depth_read(self.paths['d'][index]) if \
-            (self.paths['d'][index] is not None and self.args.use_d) else None
+        sparse = None
+        # sparse = depth_read(self.paths['d'][index]) if \
+        #     (self.paths['d'][index] is not None and self.args.use_d) else None
         target = depth_read(self.paths['gt'][index]) if \
             self.paths['gt'][index] is not None else None
         rgb_near = get_rgb_near(self.paths['rgb'][index], self.args) if \

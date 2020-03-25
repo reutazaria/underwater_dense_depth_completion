@@ -116,7 +116,7 @@ args.use_pose = ("photo" in args.train_mode)
 args.result = os.path.join('..', 'results')
 args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
-args.use_g = 'g' in args.input
+args.use_g = 'g' in args.input # and 'rgb' not in args.input
 if args.use_pose:
     args.w1, args.w2 = 0.1, 0.1
 else:
@@ -286,6 +286,7 @@ def main():
             return
 
     print("=> creating model and optimizer ... ", end='')
+    # args.input = 'rgb'
     model = DepthCompletionNet(args).to(device)
     model_named_params = [
         p for _, p in model.named_parameters() if p.requires_grad

@@ -101,7 +101,7 @@ class DepthCompletionNet(nn.Module):
             args.layers)](pretrained=args.pretrained)
         if not args.pretrained:
             pretrained_model.apply(init_weights)
-        #self.maxpool = pretrained_model._modules['maxpool']
+        # self.maxpool = pretrained_model._modules['maxpool']
         self.conv2 = pretrained_model._modules['layer1']
         self.conv3 = pretrained_model._modules['layer2']
         self.conv4 = pretrained_model._modules['layer3']
