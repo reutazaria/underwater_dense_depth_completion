@@ -12,23 +12,23 @@ def extract_video_images(video_name):
     x = round((h-h_orig)/2)
     y = round((w-w_orig)/2)
     count = 0
-    output_dir = os.path.join('..', video_name.split('.')[0] + '_cropped_images')
+    output_dir = os.path.join('..', video_name.split('.')[0] + '_cropped_images_up')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     while success:
         image_name = os.path.join(output_dir, video_name.split('.')[0] + "_image_%d.png" % count)
-        crop_img = image[x:x + h_orig, y:y + w_orig]
+        crop_img = image[x-100:x + h_orig-100, y:y + w_orig]
         cv2.imwrite(image_name, crop_img)
         # save frame as PNG file
-        if count == 1999:
-            return
+        # if count == 1999:
+        #     return
         success, image = video_cap.read()
         print('Read a new frame: ', image_name)
         count += 1
 
 
 def main():
-    video_name = 'origCaesarea.MOV'
+    video_name = 'seaErraCaesarea.avi'
     extract_video_images(video_name)
 
 
