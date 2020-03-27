@@ -298,9 +298,8 @@ class KittiDepth(data.Dataset):
     def __getraw__(self, index):
         rgb = rgb_read(self.paths['rgb'][index]) if \
             (self.paths['rgb'][index] is not None and (self.args.use_rgb or self.args.use_g)) else None
-        sparse = None
-        # sparse = depth_read(self.paths['d'][index]) if \
-        #     (self.paths['d'][index] is not None and self.args.use_d) else None
+        sparse = depth_read(self.paths['d'][index]) if \
+            (self.paths['d'][index] is not None and self.args.use_d) else None
         target = depth_read(self.paths['gt'][index]) if \
             self.paths['gt'][index] is not None else None
         rgb_near = get_rgb_near(self.paths['rgb'][index], self.args) if \

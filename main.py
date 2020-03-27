@@ -262,7 +262,6 @@ def main():
             print("=> loading checkpoint '{}' ... ".format(args.evaluate),
                   end='')
             checkpoint = torch.load(args.evaluate, map_location=device)
-            args = checkpoint['args']
             args.data_folder = args_new.data_folder
             args.val = args_new.val
             is_eval = True

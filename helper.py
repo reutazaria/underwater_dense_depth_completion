@@ -168,7 +168,7 @@ class logger:
         return is_best
 
     def conditional_save_pred(self, mode, i, pred, epoch):
-        if ("test" in mode or mode == "eval") and self.args.save_pred:
+        if "test" in mode or mode == "eval" or mode == "val":  # and self.args.save_pred:
 
             # save images for visualization/ testing
             image_folder = os.path.join(self.output_directory,
