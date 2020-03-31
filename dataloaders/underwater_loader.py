@@ -51,7 +51,7 @@ def get_paths_and_transform(split, args):
         )
         glob_gt = os.path.join(
             args.data_folder,
-            'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
+            'data_depth_annotated/train/D5_Raw/*.png'
         )
 
         def get_rgb_paths(p):
@@ -283,8 +283,8 @@ def get_rgb_near(path, args):
     return rgb_read(path_near)
 
 
-class KittiDepth(data.Dataset):
-    """A data loader for the Kitti dataset
+class UnderwaterDepth(data.Dataset):
+    """A data loader for the Underwater dataset
     """
     def __init__(self, split, args):
         self.args = args

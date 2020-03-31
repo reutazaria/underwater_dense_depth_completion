@@ -7,7 +7,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 
-from dataloaders.kitti_loader import load_calib, oheight, owidth, input_options, KittiDepth
+from dataloaders.underwater_loader import load_calib, oheight, owidth, input_options, UnderwaterDepth
 from model import DepthCompletionNet
 from metrics import AverageMeter, Result
 import criteria
@@ -305,7 +305,7 @@ def main():
     # Data loading code
     print("=> creating data loaders ... ")
     if not is_eval:
-        train_dataset = KittiDepth('train', args)
+        train_dataset = UnderwaterDepth('train', args)
         train_loader = torch.utils.data.DataLoader(train_dataset,
                                                    batch_size=args.batch_size,
                                                    shuffle=True,
@@ -313,7 +313,7 @@ def main():
                                                    pin_memory=True,
                                                    sampler=None)
         print("\t==> train_loader size:{}".format(len(train_loader)))
-    val_dataset = KittiDepth('val', args)
+    val_dataset = UnderwaterDepth('val', args)
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=1,
@@ -342,7 +342,7 @@ def main():
                 epoch)  # train for one epoch
         result, is_best = iterate("val", args, val_loader, model, None, logger,
                                   epoch)  # evaluate on validation set
-        helper.save_checkpoint({ # save checkpoint
+        helper.save_checkpoint({  # save checkpoint
             'epoch': epoch,
             'model': model.module.state_dict(),
             'best_result': logger.best_result,
