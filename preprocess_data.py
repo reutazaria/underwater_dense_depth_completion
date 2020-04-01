@@ -3,6 +3,7 @@ import os
 import rawpy
 import imageio
 import glob
+from PIL import Image
 
 
 def crop_image(image):
@@ -12,7 +13,8 @@ def crop_image(image):
     h_orig, w_orig, c = orig_im.shape
     x = round((h - h_orig) / 2)
     y = round((w - w_orig) / 2)
-    crop_img = image[x - 100:x + h_orig - 100, y:y + w_orig]
+    crop_img = image[x:x + h_orig, y:y + w_orig]
+    # crop_img = image[x - 100:x + h_orig - 100, y:y + w_orig]
     return crop_img
 
 
@@ -50,9 +52,40 @@ def raw_to_png(images_dir):
             resized_rgb = cv2.resize(rgb, dim, interpolation=cv2.INTER_AREA)
             cropped_image = crop_image(resized_rgb)
             # image_name = os.path.join(output_dir, image.split('.')[0] + ".png")
-            image_name_cropped = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + "_cropped.png")
             # imageio.imsave(image_name, rgb)
+            image_name_cropped = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + "_cropped.png")
+            print("saving image: ", image_name_cropped)
             imageio.imsave(image_name_cropped, cropped_image)
+
+
+def tif_to_png(maps_dir):
+    output_dir = os.path.join(maps_dir, "png")
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
+    output_dir_cropped = os.path.join(maps_dir, "cropped_png")
+    if not os.path.isdir(output_dir_cropped):
+        os.mkdir(output_dir_cropped)
+    for image in glob.glob(os.path.join(maps_dir, "*tif")):
+        im = Image.open(image)
+        image_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
+        imageio.imsave(image_name, im)
+        png_im = cv2.imread(image_name)
+        scale = 0.2
+        width = int(png_im.shape[1] * scale)
+        height = int(png_im.shape[0] * scale)
+        dim = (width, height)
+        resized_rgb = cv2.resize(png_im, dim, interpolation=cv2.INTER_AREA)
+        cropped_image = crop_image(resized_rgb)
+        # resized_map = im.resize(dim, Image.ANTIALIAS)
+        # orig_im = cv2.imread(
+        #     '../data/depth_selection/val_selection_cropped/image/2011_09_26_drive_0002_sync_image_0000000005_image_02.png')
+        # h_orig, w_orig, c = orig_im.shape
+        # x = round((height - h_orig) / 2)
+        # y = round((width - w_orig) / 2)
+        # cropped_image = resized_map.crop((y, x, y + w_orig, x + h_orig))
+        image_name_cropped = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_cropped.png")
+        print("saving image: ", image_name_cropped)
+        imageio.imsave(image_name_cropped, cropped_image)
 
 
 def main():
@@ -60,6 +93,8 @@ def main():
     # extract_video_images(video_name)
     images_dir = '../data/D5/Raw'
     raw_to_png(images_dir)
+    depthmaps_dir = '../data/D5/depthMaps'
+    tif_to_png(depthmaps_dir)
 
 
 if __name__ == '__main__':
