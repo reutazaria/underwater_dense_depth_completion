@@ -4,6 +4,9 @@ import rawpy
 import imageio
 import glob
 from PIL import Image
+# import matplotlib as mpl
+# import matplotlib.pyplot as plt
+# import numpy as np
 
 
 def crop_image(image):
@@ -65,6 +68,9 @@ def tif_to_png(maps_dir):
     output_dir_cropped = os.path.join(maps_dir, "cropped_png")
     if not os.path.isdir(output_dir_cropped):
         os.mkdir(output_dir_cropped)
+    # output_dir_colored = os.path.join(maps_dir, "colored_png")
+    # if not os.path.isdir(output_dir_colored):
+    #     os.mkdir(output_dir_colored)
     for image in glob.glob(os.path.join(maps_dir, "*tif")):
         im = Image.open(image)
         image_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
@@ -86,6 +92,13 @@ def tif_to_png(maps_dir):
         image_name_cropped = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_cropped.png")
         print("saving image: ", image_name_cropped)
         imageio.imsave(image_name_cropped, cropped_image)
+
+        # convert grayscale to RGB
+        # gray_im = cv2.imread(image_name_cropped, 0)
+        # cm = plt.get_cmap('gist_rainbow')
+        # colored_image = cm(gray_im)
+        # colored_image_name = os.path.join(output_dir_colored, image.split('/')[-1].split('.')[0] + "_colored.png")
+        # Image.fromarray((colored_image[:, :, :3] * 255).astype(np.uint8)).save(colored_image_name)
 
 
 def main():
