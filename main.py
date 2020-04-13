@@ -286,7 +286,6 @@ def main():
             return
 
     print("=> creating model and optimizer ... ", end='')
-    # args.input = 'rgb'
     model = DepthCompletionNet(args).to(device)
     model_named_params = [
         p for _, p in model.named_parameters() if p.requires_grad
@@ -346,8 +345,8 @@ def main():
             'epoch': epoch,
             'model': model.module.state_dict(),
             'best_result': logger.best_result,
-            'optimizer' : optimizer.state_dict(),
-            'args' : args,
+            'optimizer': optimizer.state_dict(),
+            'args': args,
         }, is_best, epoch, logger.output_directory)
 
 

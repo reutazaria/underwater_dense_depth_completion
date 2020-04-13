@@ -1,0 +1,24 @@
+# %YAML:1.0
+# Camera calibration for video (24fps) collected in Caesarea, Israel on June 11, 2019.
+# Camera calibration and distortion parameters (OpenCV conventions)
+
+Camera.fx: 1458.1
+Camera.fy: 1446.4
+Camera.cx: 539.7
+Camera.cy: 100.1
+
+Camera.k1: -0.2600
+Camera.k2: 0.6285
+Camera.p1: 0.0
+Camera.p2: 0.0
+Camera.k3: 0.0
+
+Camera.width: 960
+Camera.height: 540
+
+# Camera frames per second
+Camera.fps: 24
+
+# Color order of the images (0: BGR, 1: RGB)
+Camera.RGB: 1
+

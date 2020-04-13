@@ -11,6 +11,7 @@ import torch.utils.data as data
 import cv2
 from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
+import yaml
 
 input_options = ['d', 'rgb', 'rgbd', 'g', 'gd']
 
@@ -19,23 +20,18 @@ def load_calib():
     """
     Temporarily hardcoding the calibration matrix using calib file from 2011_09_26
     """
-    calib = open("dataloaders/calib_cam_to_cam.txt", "r")
-    lines = calib.readlines()
-    P_rect_line = lines[25]
+    # calib = open("dataloaders/calib_cam_to_cam.txt", "r")
+    f_name = "dataloaders/D5_cal_resize.yaml"
+    with open(f_name) as f:
+        parameters = yaml.load(f, Loader=yaml.FullLoader)
 
-    Proj_str = P_rect_line.split(":")[1].split(" ")[1:]
-    Proj = np.reshape(np.array([float(p) for p in Proj_str]),
-                      (3, 4)).astype(np.float32)
-    K = Proj[:3, :3]  # camera matrix
+    # distortion_coef = [k1, k2, p1, p2, k3]
+    fx = parameters['Camera.fx']
+    fy = parameters['Camera.fy']
+    cx = parameters['Camera.cx']
+    cy = parameters['Camera.cy']
+    K = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
 
-    # note: we will take the center crop of the images during augmentation
-    # that changes the optical centers, but not focal lengths
-    K[0, 2] = K[
-        0,
-        2] - 13  # from width = 1242 to 1216, with a 13-pixel cut on both sides
-    K[1, 2] = K[
-        1,
-        2] - 11.5  # from width = 375 to 352, with a 11.5-pixel cut on both sides
     return K
 
 
@@ -47,18 +43,17 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
+            'D5/depthMaps/cropped_png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
-            'data_depth_annotated/train/D5_Raw/*.png'
+            'D5/depthMaps/cropped_png/*.png'
+        )
+        glob_rgb = os.path.join(
+            args.data_folder,
+            'D5/Raw/png_cropped/*.png'
         )
 
-        def get_rgb_paths(p):
-            ps = p.split('/')
-            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-                            ps[-2:-1] + ['data'] + ps[-1:])
-            return pnew
     elif split == "val":
         if args.val == "full":
             transform = val_transform
@@ -70,28 +65,28 @@ def get_paths_and_transform(split, args):
                 args.data_folder,
                 'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
             )
+
             def get_rgb_paths(p):
                 ps = p.split('/')
-                pnew = '/'.join(ps[:-7] +  
-                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
+                pnew = '/'.join(ps[:-7] +
+                                ['data_rgb'] + ps[-6:-4] + ps[-2:-1] + ['data'] + ps[-1:])
                 return pnew
         elif args.val == "select":
             transform = no_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "depth_selection/val_selection_cropped/velodyne_raw/*.png")
+                "D5/depthMaps/cropped_png_val/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                "depth_selection/val_selection_cropped/groundtruth_depth/*.png"
+                "D5/depthMaps/cropped_png_val/*.png"
             )
-            # use for validation
-            # glob_rgb = os.path.join(
-            #    args.data_folder,
-            #    "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png"
-            # )
+            glob_rgb = os.path.join(
+                args.data_folder,
+                "D5/Raw/png_cropped_val/*.png"
+            )
 
-            def get_rgb_paths(p):
-                return p.replace("groundtruth_depth", "image")
+            # def get_rgb_paths(p):
+            #     return p.replace("groundtruth_depth", "image")
 
     elif split == "test_completion":
         transform = no_transform
@@ -106,7 +101,7 @@ def get_paths_and_transform(split, args):
     elif split == "test_prediction":
         transform = no_transform
         glob_d = None
-        glob_gt = None  #"test_depth_completion_anonymous/"
+        glob_gt = None  # "test_depth_completion_anonymous/"
         glob_rgb = os.path.join(
             args.data_folder,
             "depth_selection/test_depth_prediction_anonymous/image/*.png")
@@ -115,12 +110,12 @@ def get_paths_and_transform(split, args):
 
     if glob_gt is not None:
         # train or val-full or val-select
-        paths_d = sorted(glob.glob(glob_d)) 
+        paths_d = sorted(glob.glob(glob_d))
         paths_gt = sorted(glob.glob(glob_gt))
-        paths_rgb = [get_rgb_paths(p) for p in paths_gt]
+        # paths_rgb = [get_rgb_paths(p) for p in paths_gt]
         # use for validation
-        # paths_rgb = sorted(glob.glob(glob_rgb))
-    else:  
+        paths_rgb = sorted(glob.glob(glob_rgb))
+    else:
         # test only has d or rgb
         paths_rgb = sorted(glob.glob(glob_rgb))
         paths_gt = [None] * len(paths_rgb)
@@ -163,8 +158,8 @@ def depth_read(filename):
     depth_png = np.array(img_file, dtype=int)
     img_file.close()
     # make sure we have a proper 16bit depth map here.. not 8bit!
-    assert np.max(depth_png) > 255, \
-        "np.max(depth_png)={}, path={}".format(np.max(depth_png),filename)
+    # assert np.max(depth_png) > 255, \
+    #     "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
     # depth[depth_png == 0] = -1.
@@ -286,6 +281,7 @@ def get_rgb_near(path, args):
 class UnderwaterDepth(data.Dataset):
     """A data loader for the Underwater dataset
     """
+
     def __init__(self, split, args):
         self.args = args
         self.split = split
@@ -324,8 +320,8 @@ class UnderwaterDepth(data.Dataset):
                 r_mat = np.eye(3)
 
         rgb, gray = handle_gray(rgb, self.args)
-        candidates = {"rgb":rgb, "d":sparse, "gt":target, \
-            "g":gray, "r_mat":r_mat, "t_vec":t_vec, "rgb_near":rgb_near}
+        candidates = {"rgb": rgb, "d": sparse, "gt": target, \
+                      "g": gray, "r_mat": r_mat, "t_vec": t_vec, "rgb_near": rgb_near}
         items = {
             key: to_float_tensor(val)
             for key, val in candidates.items() if val is not None
