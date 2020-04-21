@@ -73,6 +73,8 @@ def tif_to_png(maps_dir):
     # if not os.path.isdir(output_dir_colored):
     #     os.mkdir(output_dir_colored)
     for image in glob.glob(os.path.join(maps_dir, "*tif")):
+        # for converting Tif to Png from terminal, run:
+        # gdal_translate -of PNG <<current_image>> <<new_image_name>>
         im = Image.open(image)
         image_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
         imageio.imsave(image_name, im)
