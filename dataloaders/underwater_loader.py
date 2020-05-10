@@ -43,7 +43,7 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps/cropped_png/*.png'
+            'D5/depthMaps/cropped_sparse_png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
@@ -75,18 +75,16 @@ def get_paths_and_transform(split, args):
             transform = no_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "D5/depthMaps/cropped_png_val/*.png")
+                # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
+                "D5/depthMaps/cropped_sparse_png_val/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                "D5/depthMaps/cropped_png_val/*.png"
-            )
+                # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
+                "D5/depthMaps/cropped_png_val/*.png")
             glob_rgb = os.path.join(
                 args.data_folder,
-                "D5/Raw/png_cropped_val/*.png"
-            )
-
-            # def get_rgb_paths(p):
-            #     return p.replace("groundtruth_depth", "image")
+                # "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png")
+                "D5/Raw/png_cropped_val/*.png")
 
     elif split == "test_completion":
         transform = no_transform
@@ -161,7 +159,8 @@ def depth_read(filename):
     # assert np.max(depth_png) > 255, \
     #     "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
-    depth = depth_png.astype(np.float) / 256.
+    # depth = depth_png.astype(np.float) / 256.
+    depth = depth_png.astype(np.float)
     # depth[depth_png == 0] = -1.
     depth = np.expand_dims(depth, -1)
     return depth
@@ -251,13 +250,15 @@ def get_rgb_near(path, args):
 
     def extract_frame_id(filename):
         head, tail = os.path.split(filename)
-        number_string = tail[0:tail.find('.')]
+        number_string = tail[0:tail.find('.')].split('_')[-1]
         number = int(number_string)
         return head, number
 
     def get_nearby_filename(filename, new_id):
-        head, _ = os.path.split(filename)
-        new_filename = os.path.join(head, '%010d.png' % new_id)
+        head, tail = os.path.split(filename)
+        number_string = tail[0:tail.find('.')].split('_')[-1]
+        image_head = tail[0:tail.find(number_string)]
+        new_filename = os.path.join(head, image_head + str(new_id) + '.png')
         return new_filename
 
     head, number = extract_frame_id(path)
