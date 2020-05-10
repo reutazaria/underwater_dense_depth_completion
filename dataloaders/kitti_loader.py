@@ -70,6 +70,7 @@ def get_paths_and_transform(split, args):
                 args.data_folder,
                 'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
             )
+
             def get_rgb_paths(p):
                 ps = p.split('/')
                 pnew = '/'.join(ps[:-7] +  
@@ -138,8 +139,8 @@ def get_paths_and_transform(split, args):
         raise (RuntimeError("Requested rgb images but none was found"))
     if len(paths_rgb) == 0 and args.use_g:
         raise (RuntimeError("Requested gray images but no rgb was found"))
-    # if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
-    #     raise (RuntimeError("Produced different sizes for datasets"))
+    if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
+        raise (RuntimeError("Produced different sizes for datasets"))
 
     paths = {"rgb": paths_rgb, "d": paths_d, "gt": paths_gt}
     return paths, transform
@@ -164,7 +165,7 @@ def depth_read(filename):
     img_file.close()
     # make sure we have a proper 16bit depth map here.. not 8bit!
     assert np.max(depth_png) > 255, \
-        "np.max(depth_png)={}, path={}".format(np.max(depth_png),filename)
+        "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
     # depth[depth_png == 0] = -1.
