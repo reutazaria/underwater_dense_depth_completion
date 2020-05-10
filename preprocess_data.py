@@ -7,6 +7,7 @@ from PIL import Image
 # import matplotlib as mpl
 # import matplotlib.pyplot as plt
 import numpy as np
+import random
 import tifffile as tiff
 
 
@@ -105,13 +106,36 @@ def tif_to_png(maps_dir):
         # Image.fromarray((colored_image[:, :, :3] * 255).astype(np.uint8)).save(colored_image_name)
 
 
+def gt_to_sparse(maps_dir):
+    output_dir_cropped = os.path.join(maps_dir, "cropped_sparse_png_val")
+    if not os.path.isdir(output_dir_cropped):
+        os.mkdir(output_dir_cropped)
+    for image in glob.glob(os.path.join(maps_dir, "*.png")):
+        png_im = np.array(Image.open(image)).astype("uint16")
+        new_depth = np.zeros(png_im.shape)
+        y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
+        chosen_pixels = random.sample(range(0, x_idx.size), k=10000)  # k=int(x_idx.size * 0.1)
+        for i in range(0, len(chosen_pixels)):
+            rand_idx = chosen_pixels[i]  # randomly choose any element in the x_idx list
+            x = x_idx[rand_idx]
+            y = y_idx[rand_idx]
+            new_depth[y, x] = png_im[y, x]
+        image_name_cropped = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_sparse.png")
+        print("saving image: ", image_name_cropped)
+        imageio.imsave(image_name_cropped, new_depth)
+
+
+
 def main():
     video_name = 'seaErraCaesarea.avi'
     # extract_video_images(video_name)
     images_dir = '../data/D5/Raw'
     # raw_to_png(images_dir)
     depthmaps_dir = '../data/D5/depthMaps'
-    tif_to_png(depthmaps_dir)
+    # depthmaps_dir = '../data/depth_selection/val_selection_cropped/sparse_depth_maps'
+    # tif_to_png(depthmaps_dir)
+    depthmaps_png = '../data/D5/depthMaps/cropped_png_val'
+    gt_to_sparse(depthmaps_png)
 
 
 if __name__ == '__main__':
