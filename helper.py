@@ -64,13 +64,13 @@ class logger:
                 'REL={blk_avg.absrel:.3f}({average.absrel:.3f})\n\t'
                 'Lg10={blk_avg.lg10:.3f}({average.lg10:.3f}) '
                 'Photometric={blk_avg.photometric:.3f}({average.photometric:.3f}) '
-                .format(epoch,
-                        i + 1,
-                        n_set,
-                        lr=lr,
-                        blk_avg=blk_avg,
-                        average=avg,
-                        split=split.capitalize()))
+                    .format(epoch,
+                            i + 1,
+                            n_set,
+                            lr=lr,
+                            blk_avg=blk_avg,
+                            average=avg,
+                            split=split.capitalize()))
             blk_avg_meter.reset()
 
     def conditional_save_info(self, split, average_meter, epoch):
@@ -216,7 +216,7 @@ def backup_source_code(backup_directory):
 
 def adjust_learning_rate(lr_init, optimizer, epoch):
     """Sets the learning rate to the initial LR decayed by 10 every 5 epochs"""
-    lr = lr_init * (0.1**(epoch // 5))
+    lr = lr_init * (0.1 ** (epoch // 5))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
@@ -239,16 +239,14 @@ def save_checkpoint(state, is_best, epoch, output_directory):
 def get_folder_name(args):
     current_time = time.strftime('%Y-%m-%d@%H-%M')
     if args.use_pose:
-        prefix = "mode={}.w1={}.w2={}.".format(args.train_mode, args.w1,
-                                               args.w2)
+        prefix = "mode={}.w1={}.w2={}.".format(args.train_mode, args.w1, args.w2)
     else:
         prefix = "mode={}.".format(args.train_mode)
-    return os.path.join(args.result,
-        prefix + 'input={}.resnet{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={}.time={}'.
-        format(args.input, args.layers, args.criterion, \
-            args.lr, args.batch_size, args.weight_decay, \
-            args.pretrained, args.jitter, current_time
-            ))
+    return os.path.join(args.result, prefix +
+                        'input={}.resnet{}.epochs{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={}.time={}'.
+                        format(args.input, args.layers, args.epochs, args.criterion,
+                               args.lr, args.batch_size, args.weight_decay,
+                               args.pretrained, args.jitter, current_time))
 
 
 avgpool = torch.nn.AvgPool2d(kernel_size=2, stride=2).cuda()
