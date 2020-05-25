@@ -21,7 +21,7 @@ def load_calib():
     Temporarily hardcoding the calibration matrix using calib file from 2011_09_26
     """
     # calib = open("dataloaders/calib_cam_to_cam.txt", "r")
-    f_name = "dataloaders/D5_cal_resize.yaml"
+    f_name = "dataloaders/D5_cal_cropped.yaml"
     with open(f_name) as f:
         parameters = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -43,15 +43,17 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps/cropped_sparse_png/*.png'
+            'D5/depthMaps_2020_04_16/cropped_sparse_10000_png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
-            'D5/depthMaps/cropped_png/*.png'
+            'D5/depthMaps_2020_04_16/cropped_png/*.png'
+            # 'D5/depthMaps_2020_04_16/png_resized/*.png'
         )
         glob_rgb = os.path.join(
             args.data_folder,
             'D5/Raw/png_cropped/*.png'
+            # 'D5/Raw/png_resized/*.png'
         )
 
     elif split == "val":
@@ -76,11 +78,12 @@ def get_paths_and_transform(split, args):
             glob_d = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps/cropped_sparse_png_val/*.png")
+                "D5/depthMaps_2020_04_16/cropped_sparse_10000_png_val/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps/cropped_png_val/*.png")
+                "D5/depthMaps_2020_04_16/cropped_png_val/*.png")
+                # "D5/depthMaps_2020_04_16/png_resized_val/*.png")
             glob_rgb = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png")

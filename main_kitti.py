@@ -13,7 +13,9 @@ from metrics import AverageMeter, Result
 import criteria
 import helper
 from inverse_warp import Intrinsics, homography_from
+import warnings
 
+warnings.filterwarnings("ignore", category=UserWarning)
 parser = argparse.ArgumentParser(description='Sparse-to-Dense')
 parser.add_argument('-w',
                     '--workers',

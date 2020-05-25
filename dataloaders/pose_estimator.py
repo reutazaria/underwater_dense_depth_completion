@@ -94,7 +94,7 @@ def get_pose_pnp(rgb_curr, rgb_near, depth_curr, K):
         # ransac
         ret = cv2.solvePnPRansac(pts3d_curr,
                                  pts2d_near_filtered,
-                                 K,
+                                 np.asarray(K),
                                  distCoeffs=None)
         success = ret[0]
         rotation_vector = ret[1]

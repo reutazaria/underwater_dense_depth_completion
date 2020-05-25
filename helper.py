@@ -139,7 +139,7 @@ class logger:
     def conditional_save_img_comparison(self, mode, i, ele, pred, epoch):
         # save 8 images for visualization
         if mode == 'val' or mode == 'eval':
-            skip = 100
+            skip = 1
             if i == 0:
                 self.img_merge = vis_utils.merge_into_row(ele, pred)
             elif i % skip == 0 and i < 8 * skip:

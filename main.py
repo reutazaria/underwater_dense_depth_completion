@@ -13,6 +13,9 @@ from metrics import AverageMeter, Result
 import criteria
 import helper
 from inverse_warp import Intrinsics, homography_from
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 parser = argparse.ArgumentParser(description='Sparse-to-Dense')
 parser.add_argument('-w',
@@ -133,19 +136,18 @@ else:
 print("=> using '{}' for computation.".format(device))
 
 # define loss functions
-depth_criterion = criteria.MaskedMSELoss() if (
-    args.criterion == 'l2') else criteria.MaskedL1Loss()
+depth_criterion = criteria.MaskedMSELoss() if (args.criterion == 'l2') else criteria.MaskedL1Loss()
 photometric_criterion = criteria.PhotometricLoss()
 smoothness_criterion = criteria.SmoothnessLoss()
 
 if args.use_pose:
     # hard-coded KITTI camera intrinsics
     K = load_calib()
-    fu, fv = float(K[0, 0]), float(K[1, 1])
-    cu, cv = float(K[0, 2]), float(K[1, 2])
-    kitti_intrinsics = Intrinsics(owidth, oheight, fu, fv, cu, cv)
+    fu, fv = float(K[0][0]), float(K[1][1])
+    cu, cv = float(K[0][2]), float(K[1][2])
+    D5_intrinsics = Intrinsics(owidth, oheight, fu, fv, cu, cv)
     if cuda:
-        kitti_intrinsics = kitti_intrinsics.cuda()
+        D5_intrinsics = D5_intrinsics.cuda()
 
 
 def iterate(mode, args, loader, model, optimizer, logger, epoch):
@@ -207,7 +209,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
                     # compute the corresponding intrinsic parameters
                     height_, width_ = pred_.size(2), pred_.size(3)
-                    intrinsics_ = kitti_intrinsics.scale(height_, width_)
+                    intrinsics_ = D5_intrinsics.scale(height_, width_)
 
                     # inverse warp from a nearby frame to the current frame
                     warped_ = homography_from(rgb_near_, pred_,
