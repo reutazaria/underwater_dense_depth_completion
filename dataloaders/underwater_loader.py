@@ -43,7 +43,7 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps_2020_04_16/cropped_sparse_10000_png/*.png'
+            'D5/depthMaps_2020_04_16/cropped_sparse_1000_png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
@@ -78,12 +78,11 @@ def get_paths_and_transform(split, args):
             glob_d = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps_2020_04_16/cropped_sparse_10000_png_val/*.png")
+                "D5/depthMaps_2020_04_16/cropped_sparse_1000_png_val/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
                 "D5/depthMaps_2020_04_16/cropped_png_val/*.png")
-                # "D5/depthMaps_2020_04_16/png_resized_val/*.png")
             glob_rgb = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png")
@@ -113,8 +112,6 @@ def get_paths_and_transform(split, args):
         # train or val-full or val-select
         paths_d = sorted(glob.glob(glob_d))
         paths_gt = sorted(glob.glob(glob_gt))
-        # paths_rgb = [get_rgb_paths(p) for p in paths_gt]
-        # use for validation
         paths_rgb = sorted(glob.glob(glob_rgb))
     else:
         # test only has d or rgb
@@ -134,8 +131,8 @@ def get_paths_and_transform(split, args):
         raise (RuntimeError("Requested rgb images but none was found"))
     if len(paths_rgb) == 0 and args.use_g:
         raise (RuntimeError("Requested gray images but no rgb was found"))
-    # if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
-    #     raise (RuntimeError("Produced different sizes for datasets"))
+    if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
+        raise (RuntimeError("Produced different sizes for datasets"))
 
     paths = {"rgb": paths_rgb, "d": paths_d, "gt": paths_gt}
     return paths, transform
