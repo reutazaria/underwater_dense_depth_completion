@@ -27,6 +27,8 @@ class Result(object):
         self.gpu_time = 0
         self.silog = 0  # Scale invariant logarithmic error [log(m)*100]
         self.photometric = 0
+        self.avg_target = 0
+        self.avg_pred = 0
 
     def set_to_worst(self):
         self.irmse = np.inf
@@ -45,7 +47,7 @@ class Result(object):
         self.gpu_time = 0
 
     def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, lg10, \
-            delta1, delta2, delta3, gpu_time, data_time, silog, photometric=0):
+            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, photometric=0):
         self.irmse = irmse
         self.imae = imae
         self.mse = mse
@@ -61,6 +63,8 @@ class Result(object):
         self.gpu_time = gpu_time
         self.silog = silog
         self.photometric = photometric
+        self.avg_target = avg_target
+        self.avg_pred = avg_pred
 
     def evaluate(self, output, target, photometric=0):
         valid_mask = target > 0.1
@@ -71,6 +75,8 @@ class Result(object):
 
         abs_diff = (output_mm - target_mm).abs()
 
+        self.avg_target = target_mm.abs().mean()
+        self.avg_pred = output_mm.abs().mean()
         self.mse = float((torch.pow(abs_diff, 2)).mean())
         self.rmse = math.sqrt(self.mse)
         self.mae = float(abs_diff.mean())
@@ -123,6 +129,8 @@ class AverageMeter(object):
         self.sum_gpu_time = 0
         self.sum_photometric = 0
         self.sum_silog = 0
+        self.sum_avg_target = 0
+        self.sum_avg_pred = 0
 
     def update(self, result, gpu_time, data_time, n=1):
         self.count += n
@@ -141,6 +149,8 @@ class AverageMeter(object):
         self.sum_gpu_time += n * gpu_time
         self.sum_silog += n * result.silog
         self.sum_photometric += n * result.photometric
+        self.sum_avg_target += n * result.avg_target
+        self.sum_avg_pred += n * result.avg_pred
 
     def average(self):
         avg = Result()
@@ -153,5 +163,6 @@ class AverageMeter(object):
                 self.sum_delta1 / self.count, self.sum_delta2 / self.count,
                 self.sum_delta3 / self.count, self.sum_gpu_time / self.count,
                 self.sum_data_time / self.count, self.sum_silog / self.count,
+                self.sum_avg_target / self.count, self.sum_avg_pred / self.count,
                 self.sum_photometric / self.count)
         return avg

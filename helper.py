@@ -116,12 +116,13 @@ class logger:
                  "mae={:.3f}\n" + "silog={:.3f}\n" + "squared_rel={:.3f}\n" +
                  "irmse={:.3f}\n" + "imae={:.3f}\n" + "mse={:.3f}\n" +
                  "absrel={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
-                 "t_gpu={:.4f}").format(self.args.rank_metric, epoch,
+                 "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" +
+                 "avg_depth_pred={:.3f}").format(self.args.rank_metric, epoch,
                                         result.rmse, result.mae, result.silog,
                                         result.squared_rel, result.irmse,
                                         result.imae, result.mse, result.absrel,
                                         result.lg10, result.delta1,
-                                        result.gpu_time))
+                                        result.gpu_time, result.avg_target, result.avg_pred))
 
     def save_best_txt(self, result, epoch):
         self.save_single_txt(self.best_txt, result, epoch)
@@ -192,7 +193,9 @@ class logger:
               'Delta1={average.delta1:.3f}\n'
               'REL={average.absrel:.3f}\n'
               'Lg10={average.lg10:.3f}\n'
-              't_GPU={time:.3f}'.format(average=avg, time=avg.gpu_time))
+              't_GPU={time:.3f}\n'
+              'AVG_target={average.avg_target:.3f}\n'
+              'AVG_pred={average.avg_pred:.3f}\n'.format(average=avg, time=avg.gpu_time))
         if is_best and mode == "val":
             print("New best model by %s (was %.3f)" %
                   (self.args.rank_metric,

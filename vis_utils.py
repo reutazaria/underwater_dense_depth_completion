@@ -3,6 +3,7 @@ if not ("DISPLAY" in os.environ):
     import matplotlib as mpl
     mpl.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from PIL import Image
 import numpy as np
 import cv2

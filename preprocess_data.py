@@ -4,6 +4,7 @@ import rawpy
 import imageio
 import glob
 from PIL import Image
+from scipy.interpolate import griddata
 # import matplotlib as mpl
 # import matplotlib.pyplot as plt
 import numpy as np
@@ -140,14 +141,58 @@ def gt_to_sparse(maps_dir):
         new_depth = np.zeros(png_im.shape).astype("uint16")
         y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
         chosen_pixels = random.sample(range(0, x_idx.size), k=500)  # k=int(x_idx.size * 0.1)
+        ix = []
+        iy = []
         for i in range(0, len(chosen_pixels)):
             rand_idx = chosen_pixels[i]  # randomly choose any element in the x_idx list
             x = x_idx[rand_idx]
             y = y_idx[rand_idx]
             new_depth[y, x] = png_im[y, x]
+            ix.append(x)
+            iy.append(y)
         image_name_cropped = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_sparse.png")
         print("saving image: ", image_name_cropped)
         imageio.imsave(image_name_cropped, new_depth)
+
+        nx, ny = png_im.shape[1], png_im.shape[0]
+        X, Y = np.meshgrid(np.arange(0, nx, 1), np.arange(0, ny, 1))
+
+        # ix_o = np.random.randint(png_im.shape[1], size=500)
+        # iy_o = np.random.randint(png_im.shape[0], size=500)
+        samples = png_im[np.array(iy), np.array(ix)]
+
+        interpolated_im = griddata((np.array(iy), np.array(ix)), samples, (Y, X))
+        image_name_interp = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_interp.png")
+        imageio.imsave(image_name_interp, interpolated_im)
+
+
+def bilinear_interpolate(im, x, y):
+    #  im - is a 2D numpy array
+    #  x and y - are both ordinary python lists of doubles having the same length
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    x0 = np.floor(x).astype(int)
+    x1 = x0 + 1
+    y0 = np.floor(y).astype(int)
+    y1 = y0 + 1
+
+    x0 = np.clip(x0, 0, im.shape[1]-1);
+    x1 = np.clip(x1, 0, im.shape[1]-1);
+    y0 = np.clip(y0, 0, im.shape[0]-1);
+    y1 = np.clip(y1, 0, im.shape[0]-1);
+
+    Ia = im[y0, x0]
+    Ib = im[y1, x0]
+    Ic = im[y0, x1]
+    Id = im[y1, x1]
+
+    wa = (x1-x) * (y1-y)
+    wb = (x1-x) * (y-y0)
+    wc = (x-x0) * (y1-y)
+    wd = (x-x0) * (y-y0)
+
+    return wa*Ia + wb*Ib + wc*Ic + wd*Id
 
 
 def main():
