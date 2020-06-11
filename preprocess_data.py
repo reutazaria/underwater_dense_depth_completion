@@ -95,14 +95,14 @@ def tif_to_png(maps_dir):
     # output_dir_colored = os.path.join(maps_dir, "colored_png")
     # if not os.path.isdir(output_dir_colored):
     #     os.mkdir(output_dir_colored)
-    for image in glob.glob(os.path.join(maps_dir, "tif")):
+    for image in glob.glob(os.path.join(maps_dir, "*.tif")):
         # for converting Tif to Png from terminal, run:
         # gdal_translate -of PNG <<current_image>> <<new_image_name>>
         im = Image.open(image)
         image_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
         imageio.imsave(image_name, im)
-        png_im = np.array(Image.open(image_name)).astype("uint16")
-        # png_im = Image.open(image_name)
+        png_im = np.array(Image.open(image)).astype("uint16")
+        # png_im = Image.open(image)
         orig_im = cv2.imread(
             '../data/depth_selection/val_selection_cropped/image/2011_09_26_drive_0002_sync_image_0000000005_image_02.png')
         h_orig, w_orig, c = orig_im.shape
@@ -132,14 +132,14 @@ def tif_to_png(maps_dir):
 
 
 def gt_to_sparse(maps_dir):
-    output_dir_cropped = os.path.join(maps_dir, "cropped_sparse_10000_png")
+    output_dir_cropped = os.path.join(maps_dir, "cropped_sparse_500_png")
     if not os.path.isdir(output_dir_cropped):
         os.mkdir(output_dir_cropped)
     for image in glob.glob(os.path.join(maps_dir, "*.png")):
         png_im = np.array(Image.open(image)).astype("uint16")
-        new_depth = np.zeros(png_im.shape)
+        new_depth = np.zeros(png_im.shape).astype("uint16")
         y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
-        chosen_pixels = random.sample(range(0, x_idx.size), k=10000)  # k=int(x_idx.size * 0.1)
+        chosen_pixels = random.sample(range(0, x_idx.size), k=500)  # k=int(x_idx.size * 0.1)
         for i in range(0, len(chosen_pixels)):
             rand_idx = chosen_pixels[i]  # randomly choose any element in the x_idx list
             x = x_idx[rand_idx]
@@ -148,7 +148,6 @@ def gt_to_sparse(maps_dir):
         image_name_cropped = os.path.join(output_dir_cropped, image.split('/')[-1].split('.')[0] + "_sparse.png")
         print("saving image: ", image_name_cropped)
         imageio.imsave(image_name_cropped, new_depth)
-
 
 
 def main():
