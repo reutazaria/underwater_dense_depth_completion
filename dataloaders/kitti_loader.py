@@ -85,11 +85,6 @@ def get_paths_and_transform(split, args):
                 args.data_folder,
                 "depth_selection/val_selection_cropped/groundtruth_depth/*.png"
             )
-            # use for validation
-            # glob_rgb = os.path.join(
-            #    args.data_folder,
-            #    "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png"
-            # )
 
             def get_rgb_paths(p):
                 return p.replace("groundtruth_depth", "image")
@@ -119,8 +114,6 @@ def get_paths_and_transform(split, args):
         paths_d = sorted(glob.glob(glob_d)) 
         paths_gt = sorted(glob.glob(glob_gt))
         paths_rgb = [get_rgb_paths(p) for p in paths_gt]
-        # use for validation
-        # paths_rgb = sorted(glob.glob(glob_rgb))
     else:  
         # test only has d or rgb
         paths_rgb = sorted(glob.glob(glob_rgb))
