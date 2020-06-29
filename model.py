@@ -18,17 +18,16 @@ def init_weights(m):
         m.weight.data.fill_(1)
         m.bias.data.zero_()
 
-def conv_bn_relu(in_channels, out_channels, kernel_size, \
-        stride=1, padding=0, bn=True, relu=True):
+
+def conv_bn_relu(in_channels, out_channels, kernel_size,
+                 stride=1, padding=0, bn=True, relu=True):
     bias = not bn
-    layers = []
-    layers.append(
-        nn.Conv2d(in_channels,
-                  out_channels,
-                  kernel_size,
-                  stride,
-                  padding,
-                  bias=bias))
+    layers = [nn.Conv2d(in_channels,
+                        out_channels,
+                        kernel_size,
+                        stride,
+                        padding,
+                        bias=bias)]
     if bn:
         layers.append(nn.BatchNorm2d(out_channels))
     if relu:
@@ -41,18 +40,17 @@ def conv_bn_relu(in_channels, out_channels, kernel_size, \
 
     return layers
 
-def convt_bn_relu(in_channels, out_channels, kernel_size, \
-        stride=1, padding=0, output_padding=0, bn=True, relu=True):
+
+def convt_bn_relu(in_channels, out_channels, kernel_size,
+                  stride=1, padding=0, output_padding=0, bn=True, relu=True):
     bias = not bn
-    layers = []
-    layers.append(
-        nn.ConvTranspose2d(in_channels,
-                           out_channels,
-                           kernel_size,
-                           stride,
-                           padding,
-                           output_padding,
-                           bias=bias))
+    layers = [nn.ConvTranspose2d(in_channels,
+                                 out_channels,
+                                 kernel_size,
+                                 stride,
+                                 padding,
+                                 output_padding,
+                                 bias=bias)]
     if bn:
         layers.append(nn.BatchNorm2d(out_channels))
     if relu:
