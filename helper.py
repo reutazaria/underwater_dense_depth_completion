@@ -146,7 +146,7 @@ class logger:
             elif i % skip == 0 and i < 4 * skip:
                 row = vis_utils.merge_into_row(ele, pred)
                 self.img_merge = vis_utils.add_row(self.img_merge, row)
-            elif i == 8 * skip:
+            elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
                 vis_utils.save_image(self.img_merge, filename)
 
