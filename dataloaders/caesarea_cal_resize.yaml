@@ -2,19 +2,19 @@
 # Camera calibration for video (24fps) collected in Caesarea, Israel on June 11, 2019.
 # Camera calibration and distortion parameters (OpenCV conventions)
 
-Camera.fx: 1118.4
-Camera.fy: 1107.3
-Camera.cx: 483.3
-Camera.cy: 177.3
+Camera.fx: 960.2121 
+Camera.fy: 969.6849
+Camera.cx: 502.1514
+Camera.cy: 195.7546
 
-Camera.k1: -0.2043
-Camera.k2: 0.2615
+Camera.k1: -0.1462 
+Camera.k2: 0.0781
 Camera.p1: 0.0
 Camera.p2: 0.0
 Camera.k3: 0.0
 
-Camera.width: 960
-Camera.height: 540
+Camera.width: 472
+Camera.height: 840
 
 # Camera frames per second
 Camera.fps: 24
