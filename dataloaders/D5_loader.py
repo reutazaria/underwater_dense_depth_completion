@@ -13,15 +13,10 @@ from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
-input_options = ['d', 'rgb', 'rgbd', 'g', 'gd']
-
 
 def load_calib():
-    """
-    Temporarily hardcoding the calibration matrix using calib file from 2011_09_26
-    """
-    # calib = open("dataloaders/calib_cam_to_cam.txt", "r")
-    f_name = "dataloaders/D5_cal_cropped.yaml"
+    f_name = "dataloaders/D5_cal_resize_small.yaml"
+    # f_name = "dataloaders/caesarea_cal_resize.yaml"
     with open(f_name) as f:
         parameters = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -30,6 +25,12 @@ def load_calib():
     fy = parameters['Camera.fy']
     cx = parameters['Camera.cx']
     cy = parameters['Camera.cy']
+
+    # note: we will take the center crop of the images during augmentation
+    # that changes the optical centers, but not focal lengths
+    cx = cx - 4  # from width = 840 to 832, with a 4-pixel cut on both sides
+    cy = cy - 56  # from width = 560 to 448, with a 56-pixel cut on both sides
+
     K = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
 
     return K
@@ -43,17 +44,17 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps_2020_04_16/cropped_sparse_1000_png/*.png'
+            'D5/depthMaps_2020_04_16/resized_sparse_500_png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
-            'D5/depthMaps_2020_04_16/cropped_png/*.png'
-            # 'D5/depthMaps_2020_04_16/png_resized/*.png'
+            # 'D5/depthMaps_2020_04_16/cropped_png/*.png'
+            'D5/depthMaps_2020_04_16/png_resized_new/*.png'
         )
         glob_rgb = os.path.join(
             args.data_folder,
-            'D5/Raw/png_cropped/*.png'
-            # 'D5/Raw/png_resized/*.png'
+            # 'D5/Raw/png_cropped/*.png'
+            'D5/Raw/png_resized_new/*.png'
         )
 
     elif split == "val":
@@ -74,19 +75,21 @@ def get_paths_and_transform(split, args):
                                 ['data_rgb'] + ps[-6:-4] + ps[-2:-1] + ['data'] + ps[-1:])
                 return pnew
         elif args.val == "select":
-            transform = no_transform
+            transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps_2020_04_16/cropped_sparse_1000_png_val/*.png")
+                "D5/depthMaps_2020_04_16/resized_sparse_500_png_val/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps_2020_04_16/cropped_png_val/*.png")
+                # "D5/depthMaps_2020_04_16/cropped_png_val/*.png")
+                "D5/depthMaps_2020_04_16/png_resized_new_val/*.png")
             glob_rgb = os.path.join(
                 args.data_folder,
                 # "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png")
-                "D5/Raw/png_cropped_val/*.png")
+                # "CaesareaSet/enhanced/input/*.png")
+                # "D5/Raw/png_cropped_val/*.png")
+                "D5/Raw/png_resized_new_val/*.png")
 
     elif split == "test_completion":
         transform = no_transform
@@ -166,7 +169,8 @@ def depth_read(filename):
     return depth
 
 
-oheight, owidth = 352, 1216
+# oheight, owidth = 352, 1216
+oheight, owidth = 448, 832
 
 
 def drop_depth_measurements(depth, prob_keep):
@@ -176,14 +180,16 @@ def drop_depth_measurements(depth, prob_keep):
 
 
 def train_transform(rgb, sparse, target, rgb_near, args):
-    # s = np.random.uniform(1.0, 1.5) # random scaling
-    # angle = np.random.uniform(-5.0, 5.0) # random rotation degrees
+    # s = np.random.uniform(1.0, 1.5)  # random scaling
+    # angle = np.random.uniform(-5.0, 5.0)  # random rotation degrees
     do_flip = np.random.uniform(0.0, 1.0) < 0.5  # random horizontal flip
 
     transform_geometric = transforms.Compose([
+        # transforms.Resize(250.0 / iheight),
         # transforms.Rotate(angle),
         # transforms.Resize(s),
         transforms.BottomCrop((oheight, owidth)),
+        # transforms.CenterCrop((oheight, owidth)),
         transforms.HorizontalFlip(do_flip)
     ])
     if sparse is not None:

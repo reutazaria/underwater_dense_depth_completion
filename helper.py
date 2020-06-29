@@ -246,8 +246,9 @@ def get_folder_name(args):
     else:
         prefix = "mode={}.".format(args.train_mode)
     return os.path.join(args.result, prefix +
-                        'input={}.resnet{}.epochs{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={}.time={}'.
-                        format(args.input, args.layers, args.epochs, args.criterion,
+                        'data={}.input={}.resnet{}.epochs{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={'
+                        '}.time={}'.
+                        format(args.data, args.input, args.layers, args.epochs, args.criterion,
                                args.lr, args.batch_size, args.weight_decay,
                                args.pretrained, args.jitter, current_time))
 
