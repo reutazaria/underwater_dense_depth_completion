@@ -3,7 +3,6 @@ if not ("DISPLAY" in os.environ):
     import matplotlib as mpl
     mpl.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 from PIL import Image
 import numpy as np
 import cv2
@@ -13,14 +12,15 @@ cmap = plt.cm.jet
 
 def depth_colorize(depth):
     depth = (depth - np.min(depth)) / (np.max(depth) - np.min(depth))
-    depth = 255 * cmap(depth)[:, :, :3]  # H, W, C
-    return depth.astype('uint8')
+    depth_color = 255 * cmap(depth)[:, :, :3]  # H, W, C
+    return depth_color.astype('uint8')
 
 
-def merge_into_row(ele, pred):
+def merge_into_col(ele, pred):
     def preprocess_depth(x):
         y = np.squeeze(x.data.cpu().numpy())
-        return depth_colorize(y)
+        return y
+        # return depth_colorize(y)
 
     # if is gray, transforms to rgb
     img_list = []
@@ -32,18 +32,31 @@ def merge_into_row(ele, pred):
         g = np.squeeze(ele['g'][0, ...].data.cpu().numpy())
         g = np.array(Image.fromarray(g).convert('RGB'))
         img_list.append(g)
+    depth_im = preprocess_depth(pred[0, ...])
+    # add depth images
     if 'd' in ele:
-        img_list.append(preprocess_depth(ele['d'][0, ...]))
-    img_list.append(preprocess_depth(pred[0, ...]))
+        d_im = preprocess_depth(ele['d'][0, ...])
+        depth_im = np.concatenate((d_im, depth_im), axis=0)
     if 'gt' in ele:
-        img_list.append(preprocess_depth(ele['gt'][0, ...]))
+        gt_im = preprocess_depth(ele['gt'][0, ...])
+        depth_im = np.concatenate((depth_im, gt_im), axis=0)
+    img_list.append(depth_colorize(depth_im))
 
-    img_merge = np.hstack(img_list)
+    # if 'd' in ele:
+    #     img_list.append(preprocess_depth(ele['d'][0, ...]))
+    # img_list.append(preprocess_depth(pred[0, ...]))
+    # if 'gt' in ele:
+    #     img_list.append(preprocess_depth(ele['gt'][0, ...]))
+    #     # im_diff = ele['gt'][0, ...] - pred[0, ...]
+    #     # img_list.append(preprocess_depth(im_diff[0, ...]))
+
+    img_merge = np.vstack(img_list)
+    # img_merge = np.hstack(img_list)
     return img_merge.astype('uint8')
 
 
-def add_row(img_merge, row):
-    return np.vstack([img_merge, row])
+def add_col(img_merge, row):
+    return np.hstack([img_merge, row])
 
 
 def save_image(img_merge, filename):

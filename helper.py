@@ -118,11 +118,11 @@ class logger:
                  "absrel={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
                  "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" +
                  "avg_depth_pred={:.3f}").format(self.args.rank_metric, epoch,
-                                        result.rmse, result.mae, result.silog,
-                                        result.squared_rel, result.irmse,
-                                        result.imae, result.mse, result.absrel,
-                                        result.lg10, result.delta1,
-                                        result.gpu_time, result.avg_target, result.avg_pred))
+                                                 result.rmse, result.mae, result.silog,
+                                                 result.squared_rel, result.irmse,
+                                                 result.imae, result.mse, result.absrel,
+                                                 result.lg10, result.delta1,
+                                                 result.gpu_time, result.avg_target, result.avg_pred))
 
     def save_best_txt(self, result, epoch):
         self.save_single_txt(self.best_txt, result, epoch)
@@ -132,28 +132,27 @@ class logger:
             return self.output_directory + '/comparison_eval.png'
         if mode == 'val':
             if is_best:
-                return self.output_directory + '/comparison_best.png'
+                return self.output_directory + '/comparison_' + str(epoch) + '_best.png'
             else:
-                return self.output_directory + '/comparison_' + str(
-                    epoch) + '.png'
+                return self.output_directory + '/comparison_' + str(epoch) + '.png'
 
-    def conditional_save_img_comparison(self, mode, i, ele, pred, epoch):
+    def conditional_save_img_comparison(self, mode, i, ele, pred, epoch, skip=100):
         # save 8 images for visualization
         if mode == 'val' or mode == 'eval':
-            skip = 1
             if i == 0:
-                self.img_merge = vis_utils.merge_into_row(ele, pred)
+                self.img_merge = vis_utils.merge_into_col(ele, pred)
             elif i % skip == 0 and i < 4 * skip:
-                row = vis_utils.merge_into_row(ele, pred)
-                self.img_merge = vis_utils.add_row(self.img_merge, row)
+                row = vis_utils.merge_into_col(ele, pred)
+                self.img_merge = vis_utils.add_col(self.img_merge, row)
             elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
-                vis_utils.save_image(self.img_merge, filename)
+                # vis_utils.save_image(self.img_merge, filename)
 
     def save_img_comparison_as_best(self, mode, epoch):
         if mode == 'val':
             filename = self._get_img_comparison_name(mode, epoch, is_best=True)
             vis_utils.save_image(self.img_merge, filename)
+            return self.img_merge
 
     def get_ranking_error(self, result):
         return getattr(result, self.args.rank_metric)
@@ -169,16 +168,17 @@ class logger:
         return is_best
 
     def conditional_save_pred(self, mode, i, pred, epoch):
-        if "test" in mode or mode == "eval" or mode == "val":  # and self.args.save_pred:
-
+        if ("test" in mode or mode == "eval") or (mode == 'val' and self.args.save_pred):
             # save images for visualization/ testing
-            image_folder = os.path.join(self.output_directory,
-                                        mode + "_output")
+            image_folder = os.path.join(self.output_directory, mode + "_output")
             if not os.path.exists(image_folder):
                 os.makedirs(image_folder)
             img = torch.squeeze(pred.data.cpu()).numpy()
-            filename = os.path.join(image_folder, '{0:010d}.png'.format(i))
+            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}.png'.format(i))
             vis_utils.save_depth_as_uint16png(img, filename)
+            # img_color = vis_utils.depth_colorize(img)
+            # image_name_color = os.path.join(image_folder, 'colorized' + '{0:010d}.png'.format(i))
+            # vis_utils.save_image(img_color, image_name_color)
 
     def conditional_summarize(self, mode, avg, is_best):
         print("\n*\nSummary of ", mode, "round")

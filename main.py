@@ -7,13 +7,13 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 
-from dataloaders.underwater_loader import load_calib, oheight, owidth, input_options, UnderwaterDepth
 from model import DepthCompletionNet
 from metrics import AverageMeter, Result
 import criteria
 import helper
 from inverse_warp import Intrinsics, homography_from
 import warnings
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -40,7 +40,7 @@ parser.add_argument('-c',
                     default='l2',
                     choices=criteria.loss_names,
                     help='loss function: | '.join(criteria.loss_names) +
-                    ' (default: l2)')
+                         ' (default: l2)')
 parser.add_argument('-b',
                     '--batch-size',
                     default=1,
@@ -78,8 +78,8 @@ parser.add_argument('-i',
                     '--input',
                     type=str,
                     default='gd',
-                    choices=input_options,
-                    help='input: | '.join(input_options))
+                    choices=['d', 'rgb', 'rgbd', 'g', 'gd'],
+                    help='input: | d | rgb | rgbd | g | gd')
 parser.add_argument('-l',
                     '--layers',
                     type=int,
@@ -110,6 +110,15 @@ parser.add_argument(
     default="dense",
     choices=["dense", "sparse", "photo", "sparse+photo", "dense+photo"],
     help='dense | sparse | photo | sparse+photo | dense+photo')
+parser.add_argument(
+    '--data',
+    metavar='DATA',
+    default="D5",
+    choices=['kitti', 'D5', 'caesarea'],
+    help='kitti | D5 | caesarea')
+parser.add_argument('--save_pred',
+                    action="store_true",
+                    help='save prediction images')
 parser.add_argument('-e', '--evaluate', default='', type=str, metavar='PATH')
 parser.add_argument('--cpu', action="store_true", help='run on cpu')
 
@@ -119,7 +128,7 @@ args.use_pose = ("photo" in args.train_mode)
 args.result = os.path.join('..', 'results')
 args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
-args.use_g = 'g' in args.input # and 'rgb' not in args.input
+args.use_g = 'g' in args.input  # and 'rgb' not in args.input
 if args.use_pose:
     args.w1, args.w2 = 0.1, 0.1
 else:
@@ -129,6 +138,7 @@ print(args)
 cuda = torch.cuda.is_available() and not args.cpu
 if cuda:
     import torch.backends.cudnn as cudnn
+
     cudnn.benchmark = True
     device = torch.device("cuda")
 else:
@@ -140,14 +150,24 @@ depth_criterion = criteria.MaskedMSELoss() if (args.criterion == 'l2') else crit
 photometric_criterion = criteria.PhotometricLoss()
 smoothness_criterion = criteria.SmoothnessLoss()
 
+if args.data == 'D5':
+    from dataloaders.D5_loader import load_calib, oheight, owidth
+    from dataloaders.D5_loader import D5Depth as Depth
+elif args.data == 'caesarea':
+    from dataloaders.caesarea_loader import load_calib, oheight, owidth
+    from dataloaders.caesarea_loader import CaesareaDepth as Depth
+elif args.data == 'kitti':
+    from dataloaders.kitti_loader import load_calib, oheight, owidth
+    from dataloaders.kitti_loader import KittiDepth as Depth
+
 if args.use_pose:
-    # hard-coded KITTI camera intrinsics
+    # hard-coded camera intrinsics
     K = load_calib()
     fu, fv = float(K[0][0]), float(K[1][1])
     cu, cv = float(K[0][2]), float(K[1][2])
-    D5_intrinsics = Intrinsics(owidth, oheight, fu, fv, cu, cv)
+    data_intrinsics = Intrinsics(owidth, oheight, fu, fv, cu, cv)
     if cuda:
-        D5_intrinsics = D5_intrinsics.cuda()
+        data_intrinsics = data_intrinsics.cuda()
 
 
 def iterate(mode, args, loader, model, optimizer, logger, epoch):
@@ -209,14 +229,14 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
                     # compute the corresponding intrinsic parameters
                     height_, width_ = pred_.size(2), pred_.size(3)
-                    intrinsics_ = D5_intrinsics.scale(height_, width_)
+                    intrinsics_ = data_intrinsics.scale(height_, width_)
 
                     # inverse warp from a nearby frame to the current frame
                     warped_ = homography_from(rgb_near_, pred_,
                                               batch_data['r_mat'],
                                               batch_data['t_vec'], intrinsics_)
                     photometric_loss += photometric_criterion(
-                        rgb_curr_, warped_, mask_) * (2**(scale - num_scales))
+                        rgb_curr_, warped_, mask_) * (2 ** (scale - num_scales))
 
             # Loss 3: the depth smoothness loss
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0
@@ -239,10 +259,14 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                 m.update(result, gpu_time, data_time, mini_batch_size)
                 for m in meters
             ]
-            logger.conditional_print(mode, i, epoch, lr, len(loader),
-                                     block_average_meter, average_meter)
-            logger.conditional_save_img_comparison(mode, i, batch_data, pred,
-                                                   epoch)
+            logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
+            if args.data == 'D5':
+                skip = 1
+            elif args.data == 'caesarea':
+                skip = 70
+            elif args.data == 'kitti':
+                skip = 100
+            logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
             logger.conditional_save_pred(mode, i, pred, epoch)
 
     avg = logger.conditional_save_info(mode, average_meter, epoch)
@@ -261,8 +285,7 @@ def main():
     if args.evaluate:
         args_new = args
         if os.path.isfile(args.evaluate):
-            print("=> loading checkpoint '{}' ... ".format(args.evaluate),
-                  end='')
+            print("=> loading checkpoint '{}' ... ".format(args.evaluate), end='')
             checkpoint = torch.load(args.evaluate, map_location=device)
             args = checkpoint['args']
             args.data_folder = args_new.data_folder
@@ -275,8 +298,7 @@ def main():
     elif args.resume:  # optionally resume from a checkpoint
         args_new = args
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}' ... ".format(args.resume),
-                  end='')
+            print("=> loading checkpoint '{}' ... ".format(args.resume), end='')
             checkpoint = torch.load(args.resume, map_location=device)
             args.start_epoch = checkpoint['epoch'] + 1
             args.data_folder = args_new.data_folder
@@ -306,7 +328,7 @@ def main():
     # Data loading code
     print("=> creating data loaders ... ")
     if not is_eval:
-        train_dataset = UnderwaterDepth('train', args)
+        train_dataset = Depth('train', args)
         train_loader = torch.utils.data.DataLoader(train_dataset,
                                                    batch_size=args.batch_size,
                                                    shuffle=True,
@@ -314,7 +336,7 @@ def main():
                                                    pin_memory=True,
                                                    sampler=None)
         print("\t==> train_loader size:{}".format(len(train_loader)))
-    val_dataset = UnderwaterDepth('val', args)
+    val_dataset = Depth('val', args)
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=1,
@@ -331,16 +353,14 @@ def main():
 
     if is_eval:
         print("=> starting model evaluation ...")
-        result, is_best = iterate("val", args, val_loader, model, None, logger,
-                                  checkpoint['epoch'])
+        result, is_best = iterate("val", args, val_loader, model, None, logger, checkpoint['epoch'])
         return
 
     # main loop
     print("=> starting main loop ...")
     for epoch in range(args.start_epoch, args.epochs):
         print("=> starting training epoch {} ..".format(epoch))
-        iterate("train", args, train_loader, model, optimizer, logger,
-                epoch)  # train for one epoch
+        iterate("train", args, train_loader, model, optimizer, logger, epoch)  # train for one epoch
         result, is_best = iterate("val", args, val_loader, model, None, logger,
                                   epoch)  # evaluate on validation set
         helper.save_checkpoint({  # save checkpoint

@@ -1,22 +1,22 @@
 import os
 import os.path
 import glob
-import fnmatch  # pattern matching
 import numpy as np
 from numpy import linalg as LA
 from random import choice
 from PIL import Image
-import torch
 import torch.utils.data as data
 import cv2
 from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
+iheight, iwidth = 472, 840  # raw image size
+oheight, owidth = 448, 832
+
 
 def load_calib():
-    f_name = "dataloaders/D5_cal_resize_small.yaml"
-    # f_name = "dataloaders/caesarea_cal_resize.yaml"
+    f_name = "dataloaders/caesarea_cal_resize.yaml"
     with open(f_name) as f:
         parameters = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -28,8 +28,10 @@ def load_calib():
 
     # note: we will take the center crop of the images during augmentation
     # that changes the optical centers, but not focal lengths
-    cx = cx - 4  # from width = 840 to 832, with a 4-pixel cut on both sides
-    cy = cy - 56  # from width = 560 to 448, with a 56-pixel cut on both sides
+    d_width = (iwidth - owidth) / 2
+    d_height = (iheight - oheight) / 2
+    cx = cx - d_width  # from width = 840 to 832, with a 4-pixel cut on both sides
+    cy = cy - d_height  # from width = 472 to 448, with a 56-pixel cut on both sides
 
     K = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
 
@@ -44,17 +46,15 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps_2020_04_16/resized_sparse_500_png/*.png'
+            'CaesareaSet/unenhanced/train/sparse_depth/png/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
-            # 'D5/depthMaps_2020_04_16/cropped_png/*.png'
-            'D5/depthMaps_2020_04_16/png_resized_new/*.png'
+            'CaesareaSet/unenhanced/train/sparse_depth/png/*.png'
         )
         glob_rgb = os.path.join(
             args.data_folder,
-            # 'D5/Raw/png_cropped/*.png'
-            'D5/Raw/png_resized_new/*.png'
+            'CaesareaSet/unenhanced/train/input/*.png'
         )
 
     elif split == "val":
@@ -78,29 +78,27 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                # "depth_selection/val_selection_cropped/groundtruth_depth/*.png")
-                "D5/depthMaps_2020_04_16/resized_sparse_500_png_val/*.png")
+                # "CaesareaSet/enhanced/val/sparse_depth/png/*.png")
+                "CaesareaSet/unenhanced/val/sparse_depth/png/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                # "D5/depthMaps_2020_04_16/cropped_png_val/*.png")
-                "D5/depthMaps_2020_04_16/png_resized_new_val/*.png")
+                # "CaesareaSet/enhanced/val/sparse_depth/png/*.png")
+                "CaesareaSet/unenhanced/val/sparse_depth/png/*.png")
             glob_rgb = os.path.join(
                 args.data_folder,
-                # "depth_selection/val_selection_cropped/origCaesarea_cropped_images/*.png")
-                # "CaesareaSet/enhanced/input/*.png")
-                # "D5/Raw/png_cropped_val/*.png")
-                "D5/Raw/png_resized_new_val/*.png")
+                # "CaesareaSet/enhanced/val/input/*.png")
+                "CaesareaSet/unenhanced/val/input/*.png")
 
     elif split == "test_completion":
         transform = no_transform
         glob_d = os.path.join(
             args.data_folder,
-            "depth_selection/test_depth_completion_anonymous/velodyne_raw/*.png"
+            "CaesareaSet/unenhanced/val/sparse_depth/png/*.png"
         )
         glob_gt = None  # "test_depth_completion_anonymous/"
         glob_rgb = os.path.join(
             args.data_folder,
-            "depth_selection/test_depth_completion_anonymous/image/*.png")
+            "CaesareaSet/unenhanced/val/input/*.png")
     elif split == "test_prediction":
         transform = no_transform
         glob_d = None
@@ -167,10 +165,6 @@ def depth_read(filename):
     # depth[depth_png == 0] = -1.
     depth = np.expand_dims(depth, -1)
     return depth
-
-
-# oheight, owidth = 352, 1216
-oheight, owidth = 448, 832
 
 
 def drop_depth_measurements(depth, prob_keep):
@@ -285,8 +279,8 @@ def get_rgb_near(path, args):
     return rgb_read(path_near)
 
 
-class UnderwaterDepth(data.Dataset):
-    """A data loader for the Underwater dataset
+class CaesareaDepth(data.Dataset):
+    """A data loader for the Caesarea dataset
     """
 
     def __init__(self, split, args):

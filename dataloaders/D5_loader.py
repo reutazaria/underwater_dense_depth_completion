@@ -46,7 +46,7 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'D5/depthMaps_2020_04_16/resized_sparse_500_png/uint16/*.png'
+            'D5/depthMaps_2020_04_16/resized_sparse_1000_png/uint16/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
@@ -78,7 +78,7 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16/*.png")
+                "D5/depthMaps_2020_04_16/resized_sparse_1000_png_val/uint16/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
                 "D5/depthMaps_2020_04_16/png_resized_new_val/uint16/*.png")
