@@ -114,8 +114,8 @@ parser.add_argument(
     '--data',
     metavar='DATA',
     default="D5",
-    choices=['kitti', 'D5', 'caesarea'],
-    help='kitti | D5 | caesarea')
+    choices=['kitti', 'D5', 'caesarea', 'cave'],
+    help='kitti | D5 | caesarea | cave')
 parser.add_argument('--save_pred',
                     action="store_true",
                     help='save prediction images')
@@ -156,6 +156,9 @@ if args.data == 'D5':
 elif args.data == 'caesarea':
     from dataloaders.caesarea_loader import load_calib, oheight, owidth
     from dataloaders.caesarea_loader import CaesareaDepth as Depth
+elif args.data == 'cave':
+    from dataloaders.SC_Cave_loader import load_calib, oheight, owidth
+    from dataloaders.SC_Cave_loader import CaveDepth as Depth
 elif args.data == 'kitti':
     from dataloaders.kitti_loader import load_calib, oheight, owidth
     from dataloaders.kitti_loader import KittiDepth as Depth
@@ -262,7 +265,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
             if args.data == 'D5':
                 skip = 1
-            elif args.data == 'caesarea':
+            elif args.data == 'caesarea' or args.data == 'cave':
                 skip = 70
             elif args.data == 'kitti':
                 skip = 100
