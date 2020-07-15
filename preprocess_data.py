@@ -1,4 +1,5 @@
 import math
+import shutil
 
 import cv2
 import os
@@ -140,17 +141,20 @@ def tif_to_png(maps_dir):
         # # Image.fromarray((colored_image[:, :, :3] * 255).astype(np.uint8)).save(colored_image_name)
 
 
-def gt_to_sparse(maps_dir):
+def gt_to_sparse(maps_dir, nsamples):
     RMSE = 0
     count = 0
-    output_dir_sparse = os.path.join(maps_dir, "resized_sparse_500_png_uint16")
+    output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(nsamples) + "_png_uint16")
     if not os.path.isdir(output_dir_sparse):
         os.mkdir(output_dir_sparse)
+    output_dir_linear_interp = os.path.join(maps_dir, "interp_" + str(nsamples) + "_png_uint16")
+    if not os.path.isdir(output_dir_linear_interp):
+        os.mkdir(output_dir_linear_interp)
     for image in glob.glob(os.path.join(maps_dir, "*.png")):
         png_im = np.array(Image.open(image)).astype("uint16")
         new_depth = np.zeros(png_im.shape).astype("uint16")
         y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
-        chosen_pixels = random.sample(range(0, x_idx.size), k=500)  # k=int(x_idx.size * 0.1)
+        chosen_pixels = random.sample(range(0, x_idx.size), k=min(x_idx.size, nsamples))  # k=int(x_idx.size * 0.1)
         ix = []
         iy = []
         for i in range(0, len(chosen_pixels)):
@@ -163,30 +167,24 @@ def gt_to_sparse(maps_dir):
         image_name_cropped = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_sparse.png")
         print("saving image: ", image_name_cropped)
         cv2.imwrite(image_name_cropped, new_depth)
-        # imageio.imsave(image_name_cropped, new_depth)
 
+        # calc linear interpolation images
         nx, ny = png_im.shape[1], png_im.shape[0]
         X, Y = np.meshgrid(np.arange(0, nx, 1), np.arange(0, ny, 1))
-
-        # ix_o = np.random.randint(png_im.shape[1], size=500)
-        # iy_o = np.random.randint(png_im.shape[0], size=500)
         samples = png_im[np.array(iy), np.array(ix)]
-
         interpolated_im = griddata((np.array(iy), np.array(ix)), samples, (Y, X), method='linear')
         interpolated_im_u = np.array(interpolated_im).astype("uint16")
-        image_name_interp = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp.png")
-        # imageio.imsave(image_name_interp, interpolated_im)
+        image_name_interp = os.path.join(output_dir_linear_interp, image.split('/')[-1].split('.')[0] + "_interp.png")
         cv2.imwrite(image_name_interp, interpolated_im_u)
-
-        # colorize image
-        depth_norm = (interpolated_im_u - np.min(interpolated_im_u)) / \
-                     (np.max(interpolated_im_u) - np.min(interpolated_im_u))
-        cmap = plt.cm.jet
-        depth_color = 255 * cmap(depth_norm)[:, :, :3]  # H, W, C
-        interp_color = depth_color.astype('uint8')
-        image_to_write = cv2.cvtColor(interp_color, cv2.COLOR_RGB2BGR)
-        image_name_color = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp_col.png")
-        cv2.imwrite(image_name_color, image_to_write)
+        # # colorize image
+        # depth_norm = (interpolated_im_u - np.min(interpolated_im_u)) / \
+        #              (np.max(interpolated_im_u) - np.min(interpolated_im_u))
+        # cmap = plt.cm.jet
+        # depth_color = 255 * cmap(depth_norm)[:, :, :3]  # H, W, C
+        # interp_color = depth_color.astype('uint8')
+        # image_to_write = cv2.cvtColor(interp_color, cv2.COLOR_RGB2BGR)
+        # image_name_color = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp_col.png")
+        # cv2.imwrite(image_name_color, image_to_write)
 
         # calc RMSE between gt and interp
         if 'val' in maps_dir:
@@ -200,7 +198,6 @@ def gt_to_sparse(maps_dir):
             output_mm = 1e3 * depth_interp[valid_mask]
             RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
             count += 1
-
     print(RMSE/count)
 
 
@@ -209,7 +206,7 @@ def save_depth_as_uint16(maps_dir):
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for image in glob.glob(os.path.join(maps_dir, "*.png")):
-        png_im = np.array(Image.open(image))
+        png_im = np.array(Image.open(image))  # .convert('L'))
         img = (png_im * 256).astype('uint16')
         file_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
         cv2.imwrite(file_name, img)
@@ -279,21 +276,47 @@ def colorize_depth(maps_dir):
     #     plt.show()
 
 
+def make_train_val_sets(input_dir, depth_dir):
+    input_val_dir = os.path.join(input_dir, '../val')
+    if not os.path.isdir(input_val_dir):
+        os.mkdir(input_val_dir)
+    depth_val_dir = os.path.join(depth_dir, '../val')
+    if not os.path.isdir(depth_val_dir):
+        os.mkdir(depth_val_dir)
+    input_images = sorted(glob.glob(os.path.join(input_dir, "*.png")))
+    depth_images = sorted(glob.glob(os.path.join(depth_dir, "*.png")))
+    n_samples = len(os.listdir(input_dir))
+    n_val = round(n_samples*0.2)
+    selected_val = random.sample(range(1, n_samples), k=n_val)
+    for i in selected_val:
+        shutil.move(input_images[i], input_val_dir)
+        shutil.move(depth_images[i], depth_val_dir)
+
+
 def main():
     # video_name = 'seaErraCaesarea.avi'
     # extract_video_images(video_name)
-    images_dir = '../data/D5/Raw'
+    # images_dir = '../data/D5/Raw'
     # raw_to_png_orig(images_dir)
     # raw_to_png(images_dir)
+
     # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/png'
-    # depthmaps_dir = '../data/CaesareaSet/enhanced/train/sparse_depth'
+    # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
     # tif_to_png(depthmaps_dir)
-    # depthmaps_png = '../data/D5/depthMaps_2020_04_16/png_resized_new_val/uint16'
-    # gt_to_sparse(depthmaps_png)
-    depthmaps_png = '../data/D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16'
-    colorize_depth(depthmaps_png)
+
+    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/lft'
     # save_depth_as_uint16(depthmaps_png)
-    images_dir = '../data/D5/Raw/png_resized'
+
+    # input_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png'
+    # depth_dir = '../data/SouthCarolinaCave/depthMaps/uint16'
+    # make_train_val_sets(input_dir, depth_dir)
+
+    depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16'
+    nsamples = 1000
+    gt_to_sparse(depthmaps_png, nsamples)
+
+    # depthmaps_png = '../data/D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16'
+    # colorize_depth(depthmaps_png)
 
 
 if __name__ == '__main__':
