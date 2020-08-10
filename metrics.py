@@ -67,7 +67,12 @@ class Result(object):
         self.avg_pred = avg_pred
 
     def evaluate(self, output, target, photometric=0):
-        valid_mask = target > 0.0
+        k = 1 + round(0.9 * (target.numel() - 1))
+        result = target.view(-1).kthvalue(k).values.item()
+
+        target[target > result] = 0
+
+        valid_mask = target > 0.1
 
         # convert from meters to mm
         output_mm = 1e3 * output[valid_mask]

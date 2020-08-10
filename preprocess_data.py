@@ -142,12 +142,11 @@ def tif_to_png(maps_dir):
 
 
 def gt_to_sparse(maps_dir, nsamples):
-    RMSE = 0
-    count = 0
-    output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(nsamples) + "_png_uint16")
+
+    output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(nsamples))
     if not os.path.isdir(output_dir_sparse):
         os.mkdir(output_dir_sparse)
-    output_dir_linear_interp = os.path.join(maps_dir, "interp_" + str(nsamples) + "_png_uint16")
+    output_dir_linear_interp = os.path.join(maps_dir, "interp_" + str(nsamples))
     if not os.path.isdir(output_dir_linear_interp):
         os.mkdir(output_dir_linear_interp)
     for image in glob.glob(os.path.join(maps_dir, "*.png")):
@@ -185,27 +184,28 @@ def gt_to_sparse(maps_dir, nsamples):
         # image_to_write = cv2.cvtColor(interp_color, cv2.COLOR_RGB2BGR)
         # image_name_color = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp_col.png")
         # cv2.imwrite(image_name_color, image_to_write)
-
-        # calc RMSE between gt and interp
-        if 'val' in maps_dir:
-            depth_gt = png_im.astype(np.float) / 256.
-            depth_gt = np.expand_dims(depth_gt, -1)
-            depth_interp = interpolated_im_u.astype(np.float) / 256.
-            depth_interp = np.expand_dims(depth_interp, -1)
-            valid_mask = depth_gt > 0
-            # convert from meters to mm
-            target_mm = 1e3 * depth_gt[valid_mask]
-            output_mm = 1e3 * depth_interp[valid_mask]
-            RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
-            count += 1
-    print(RMSE/count)
+    #
+    #     # calc RMSE between gt and interp
+    #     if 'val' in maps_dir:
+    #         depth_gt = png_im.astype(np.float) / 256.
+    #         depth_gt = np.expand_dims(depth_gt, -1)
+    #         depth_interp = interpolated_im_u.astype(np.float) / 256.
+    #         depth_interp = np.expand_dims(depth_interp, -1)
+    #         valid_mask = 0.1 < depth_gt < np.percentile(depth_gt, 90)
+    #         # convert from meters to mm
+    #         target_mm = 1e3 * depth_gt[valid_mask]
+    #         output_mm = 1e3 * depth_interp[valid_mask]
+    #         RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
+    #         MAE += float(((output_mm - target_mm).abs()).mean())
+    #         count += 1
+    # print(RMSE/count)
 
 
 def save_depth_as_uint16(maps_dir):
     output_dir = os.path.join(maps_dir, "uint16")
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
-    for image in glob.glob(os.path.join(maps_dir, "*.png")):
+    for image in glob.glob(os.path.join(maps_dir, "*.tif")):
         png_im = np.array(Image.open(image))  # .convert('L'))
         img = (png_im * 256).astype('uint16')
         file_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
@@ -214,47 +214,54 @@ def save_depth_as_uint16(maps_dir):
 
 def colorize_depth(maps_dir):
     img_list = []
-    gt_dir = '../data/D5/depthMaps_2020_04_16/png_resized_new_val/uint16'
-    gt_images = os.listdir(gt_dir)
-    sparse_dir = '../data/D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16'
-    sparse_images = os.listdir(sparse_dir)
-    pred_d_dir = '../data/D5/depthMaps_2020_04_16/results/pred_d_500'
-    pred_d_images = os.listdir(pred_d_dir)
-    pred_rgb_dir = '../data/D5/depthMaps_2020_04_16/results/pred_rgb_500'
-    pred_rgb_images = os.listdir(pred_rgb_dir)
-    pred_rgbd_dir = '../data/D5/depthMaps_2020_04_16/results/pred_rgbd_500'
-    pred_rgbd_images = os.listdir(pred_rgbd_dir)
-    linear_interp_dir = '../data/D5/depthMaps_2020_04_16/interpolated_resized_sparse_500_val/uint16'
-    interp_images = os.listdir(linear_interp_dir)
+    # gt_dir = '../data/D5/depthMaps_2020_04_16/png_resized_new_val/uint16'
+    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/val'
+    gt_images = sorted(os.listdir(gt_dir))
+    # sparse_dir = '../data/D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16'
+    sparse_dir = '../data/SouthCarolinaCave/depthMaps/sparse/val'
+    sparse_images = sorted(os.listdir(sparse_dir))
+    pred_d_dir = '../data/SouthCarolinaCave/results/sd'
+    pred_d_images = sorted(os.listdir(pred_d_dir))
+    pred_rgb_dir = '../data/SouthCarolinaCave/results/rgb'
+    pred_rgb_images = sorted(os.listdir(pred_rgb_dir))
+    pred_rgbd_dir = '../data/SouthCarolinaCave/results/rgbd'
+    pred_rgbd_images = sorted(os.listdir(pred_rgbd_dir))
+    # linear_interp_dir = '../data/D5/depthMaps_2020_04_16/interpolated_resized_sparse_500_val/uint16'
+    linear_interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/val'
+    interp_images = sorted(os.listdir(linear_interp_dir))
 
-    oheight, owidth = 448, 832
+    oheight, owidth = 512, 800  # 448, 832  #
     transform_geometric = transforms.Compose([
         transforms.BottomCrop((oheight, owidth))])
 
     # fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
 
     for i in range(3):  # range(0, len(gt_images)):
-        gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
+        gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i*20])))
         gt_im = gt_im.astype(np.float) / 256.
         gt_im = transform_geometric(gt_im)
-        sparse_im = np.array(Image.open(os.path.join(sparse_dir, sparse_images[i])))
+        # gt_im[gt_im > np.percentile(gt_im, 90)] = 0.0
+        sparse_im = np.array(Image.open(os.path.join(sparse_dir, sparse_images[i*20])))
         sparse_im = sparse_im.astype(np.float) / 256.
         sparse_im = transform_geometric(sparse_im)
+        # sparse_im[sparse_im > np.percentile(gt_im, 90)] = 0.0
         pred_d_im = np.array(Image.open(os.path.join(pred_d_dir, pred_d_images[i])))
         pred_d_im = pred_d_im.astype(np.float) / 256.
-        pred_d_im[pred_d_im > np.max(gt_im)] = 0.0
-        pred_rgb_im = np.array(Image.open(os.path.join(pred_rgb_dir, pred_rgb_images[i])))
-        pred_rgb_im = pred_rgb_im.astype(np.float) / 256.
+        # pred_d_im[pred_d_im > np.percentile(gt_im, 90)] = 0.0
+        # pred_rgb_im = np.array(Image.open(os.path.join(pred_rgb_dir, pred_rgb_images[i])))
+        # pred_rgb_im = pred_rgb_im.astype(np.float) / 256.
+        # pred_rgb_im[pred_rgb_im > np.percentile(gt_im, 90)] = 0.0
         pred_rgbd_im = np.array(Image.open(os.path.join(pred_rgbd_dir, pred_rgbd_images[i])))
         pred_rgbd_im = pred_rgbd_im.astype(np.float) / 256.
-        pred_rgbd_im[pred_rgbd_im > np.max(gt_im)] = 0.0
-        interp_im = np.array(Image.open(os.path.join(linear_interp_dir, interp_images[i])))
+        # pred_rgbd_im[pred_rgbd_im > np.percentile(gt_im, 90)] = 0.0
+        interp_im = np.array(Image.open(os.path.join(linear_interp_dir, interp_images[i*20])))
         interp_im = interp_im.astype(np.float) / 256.
         interp_im = transform_geometric(interp_im)
+        # interp_im[interp_im > np.percentile(gt_im, 90)] = 0.0
         # interp_im[interp_im > np.max(gt_im)] = 0.0
-        # diff_im = gt_im - pred_im
-        depth_im = np.concatenate((sparse_im, pred_d_im, pred_rgb_im, pred_rgbd_im, gt_im, interp_im), axis=0)
-        # depth_im = np.concatenate((sparse_im, pred_rgbd_im, gt_im), axis=0)
+        diff_im = gt_im - pred_rgbd_im
+        depth_im = np.concatenate((sparse_im, pred_d_im, pred_rgbd_im, gt_im, interp_im), axis=0)
+        # depth_im = np.concatenate((sparse_im, gt_im, interp_im), axis=0)
         img_list.append(depth_im)
     depth_tot = np.hstack(img_list)
     ax = plt.gca()
@@ -276,6 +283,38 @@ def colorize_depth(maps_dir):
     #     plt.show()
 
 
+def calc_errors(gt_dir, interp_dir):
+    RMSE = 0
+    MAE = 0
+    count = 0
+    o_height, o_width = 512, 800
+    transform_geometric = transforms.Compose([
+        transforms.BottomCrop((o_height, o_width))])
+
+    gt_images = sorted(os.listdir(gt_dir))
+    interp_images = sorted(os.listdir(interp_dir))
+    for i in range(0, len(gt_images)):
+        depth_gt = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
+        depth_gt = depth_gt.astype(np.float) / 256.
+        depth_gt = transform_geometric(depth_gt)
+        depth_gt = np.expand_dims(depth_gt, -1)
+        depth_interp = np.array(Image.open(os.path.join(interp_dir, interp_images[i])))
+        depth_interp = depth_interp.astype(np.float) / 256.
+        depth_interp = transform_geometric(depth_interp)
+        depth_interp = np.expand_dims(depth_interp, -1)
+
+        depth_gt[depth_gt > np.percentile(depth_gt, 90)] = 0
+        valid_mask = depth_gt > 0.1
+        # convert from meters to mm
+        target_mm = 1e3 * depth_gt[valid_mask]
+        output_mm = 1e3 * depth_interp[valid_mask]
+        RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
+        MAE += float(np.mean(np.abs(output_mm - target_mm)))
+        count += 1
+    print("RMSE: ", RMSE/count)
+    print("MAE: ", MAE/count)
+
+
 def make_train_val_sets(input_dir, depth_dir):
     input_val_dir = os.path.join(input_dir, '../val')
     if not os.path.isdir(input_val_dir):
@@ -293,6 +332,15 @@ def make_train_val_sets(input_dir, depth_dir):
         shutil.move(depth_images[i], depth_val_dir)
 
 
+def rename_files():
+    dir_name = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/'
+    for f in os.listdir(dir_name):
+        if os.path.isfile(os.path.join(dir_name, f)) and ('input' in f):
+            splits = f.split('_')
+            new_name = splits[0] + '_SeaErra' + splits[2]
+            os.rename(os.path.join(dir_name, f), os.path.join(dir_name, new_name))
+
+
 def main():
     # video_name = 'seaErraCaesarea.avi'
     # extract_video_images(video_name)
@@ -304,16 +352,18 @@ def main():
     # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
     # tif_to_png(depthmaps_dir)
 
-    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/lft'
+    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/tif'
     # save_depth_as_uint16(depthmaps_png)
 
-    # input_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png'
-    # depth_dir = '../data/SouthCarolinaCave/depthMaps/uint16'
-    # make_train_val_sets(input_dir, depth_dir)
+    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16/val'
+    # nsamples = 500
+    # gt_to_sparse(depthmaps_png, nsamples)
 
-    depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16'
-    nsamples = 1000
-    gt_to_sparse(depthmaps_png, nsamples)
+    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test'
+    interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test'
+    calc_errors(gt_dir, interp_dir)
+
+    # rename_files()
 
     # depthmaps_png = '../data/D5/depthMaps_2020_04_16/resized_sparse_500_png_val/uint16'
     # colorize_depth(depthmaps_png)
