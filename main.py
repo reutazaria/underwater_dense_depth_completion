@@ -293,6 +293,7 @@ def main():
             args = checkpoint['args']
             args.data_folder = args_new.data_folder
             args.val = args_new.val
+            args.save_pred = args_new.save_pred
             is_eval = True
             print("Completed.")
         else:
