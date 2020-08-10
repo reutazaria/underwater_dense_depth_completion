@@ -46,45 +46,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/sparse_500_png_uint16/*.png'
-        )
+            'SouthCarolinaCave/depthMaps/sparse/train/*.png')
         glob_gt = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/uint16/*.png'
-        )
+            'SouthCarolinaCave/depthMaps/uint16/train/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/cave_seaerra_lft_to1500/png/*.png'
-        )
+            'SouthCarolinaCave/cave_seaerra_lft_to1500/png/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'data_depth_velodyne/val/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-            )
+                'SouthCarolinaCave/depthMaps/sparse/test/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            )
+                'SouthCarolinaCave/depthMaps/uint16/test/*.png')
+            glob_rgb = os.path.join(
+                args.data_folder,
+                "SouthCarolinaCave/cave_seaerra_lft_to1500/png/test/*.png")
 
-            def get_rgb_paths(p):
-                ps = p.split('/')
-                pnew = '/'.join(ps[:-7] +
-                                ['data_rgb'] + ps[-6:-4] + ps[-2:-1] + ['data'] + ps[-1:])
-                return pnew
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "SouthCarolinaCave/depthMaps/sparse_500_png_uint16_val/*.png")
+                'SouthCarolinaCave/depthMaps/sparse/val/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                "SouthCarolinaCave/depthMaps/uint16_val/*.png")
+                'SouthCarolinaCave/depthMaps/uint16/val/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                "SouthCarolinaCave/cave_seaerra_lft_to1500/png_val/*.png")
+                "SouthCarolinaCave/cave_seaerra_lft_to1500/png/val/*.png")
 
     elif split == "test_completion":
         transform = no_transform
@@ -247,15 +240,15 @@ def get_rgb_near(path, args):
 
     def extract_frame_id(filename):
         head, tail = os.path.split(filename)
-        number_string = tail[0:tail.find('.')].split('_')[-1]
+        number_string = tail[11:tail.find('.')]
         number = int(number_string)
         return head, number
 
     def get_nearby_filename(filename, new_id):
         head, tail = os.path.split(filename)
-        number_string = tail[0:tail.find('.')].split('_')[-1]
+        number_string = tail[11:tail.find('.')]
         image_head = tail[0:tail.find(number_string)]
-        new_filename = os.path.join(head, image_head + str(new_id) + '.png')
+        new_filename = os.path.join(head, image_head + str(new_id).zfill(6) + '.png')
         return new_filename
 
     head, number = extract_frame_id(path)
