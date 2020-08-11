@@ -1,5 +1,5 @@
-import math
-import os, time
+import os
+import time
 import shutil
 import torch
 import csv
@@ -7,9 +7,9 @@ import vis_utils
 from metrics import Result
 
 fieldnames = [
-    'epoch', 'rmse', 'photo', 'mae', 'irmse', 'imae', 'mse', 'absrel', 'lg10',
-    'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
-    'gpu_time'
+    'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
+    'lg10', 'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
+    'gpu_time', 'avg_target', 'avg_pred'
 ]
 
 
@@ -63,14 +63,19 @@ class logger:
                 'Delta1={blk_avg.delta1:.3f}({average.delta1:.3f}) '
                 'REL={blk_avg.absrel:.3f}({average.absrel:.3f})\n\t'
                 'Lg10={blk_avg.lg10:.3f}({average.lg10:.3f}) '
-                'Photometric={blk_avg.photometric:.3f}({average.photometric:.3f}) '
-                    .format(epoch,
-                            i + 1,
-                            n_set,
-                            lr=lr,
-                            blk_avg=blk_avg,
-                            average=avg,
-                            split=split.capitalize()))
+                'Avg_target={blk_avg.avg_target:.3f}({average.avg_target:.3f}) '
+                'Avg_pred={blk_avg.avg_pred:.3f}({average.avg_pred:.3f})\n\t'
+                'Loss={blk_avg.loss:.3f}({average.loss:.3f}) '
+                'Depth_loss={blk_avg.depth_loss:.3f}({average.depth_loss:.3f}) '
+                'Smooth_loss={blk_avg.smooth_loss:.3f}({average.smooth_loss:.3f}) '
+                'Photometric_loss={blk_avg.photometric_loss:.3f}({average.photometric_loss:.3f}) '
+                .format(epoch,
+                        i + 1,
+                        n_set,
+                        lr=lr,
+                        blk_avg=blk_avg,
+                        average=avg,
+                        split=split.capitalize()))
             blk_avg_meter.reset()
 
     def conditional_save_info(self, split, average_meter, epoch):
@@ -92,8 +97,11 @@ class logger:
             writer.writerow({
                 'epoch': epoch,
                 'rmse': avg.rmse,
-                'photo': avg.photometric,
                 'mae': avg.mae,
+                'loss': avg.loss,
+                'depth_loss': avg.depth_loss,
+                'smooth_loss': avg.smooth_loss,
+                'photometric_loss': avg.photometric_loss,
                 'irmse': avg.irmse,
                 'imae': avg.imae,
                 'mse': avg.mse,
@@ -105,7 +113,9 @@ class logger:
                 'delta2': avg.delta2,
                 'delta3': avg.delta3,
                 'gpu_time': avg.gpu_time,
-                'data_time': avg.data_time
+                'data_time': avg.data_time,
+                'avg_target': avg.avg_target,
+                'avg_pred': avg.avg_pred
             })
         return avg
 
@@ -185,7 +195,10 @@ class logger:
         print(''
               'RMSE={average.rmse:.3f}\n'
               'MAE={average.mae:.3f}\n'
-              'Photo={average.photometric:.3f}\n'
+              'Loss={average.loss:.3f}\n'
+              'Depth_loss={average.depth_loss:.3f}\n'
+              'Smooth_loss={average.smooth_loss:.3f}\n'
+              'Photometric_loss={average.photometric_loss:.3f}\n'
               'iRMSE={average.irmse:.3f}\n'
               'iMAE={average.imae:.3f}\n'
               'squared_rel={average.squared_rel}\n'

@@ -26,9 +26,12 @@ class Result(object):
         self.data_time = 0
         self.gpu_time = 0
         self.silog = 0  # Scale invariant logarithmic error [log(m)*100]
-        self.photometric = 0
         self.avg_target = 0
         self.avg_pred = 0
+        self.loss = 0
+        self.depth_loss = 0
+        self.smooth_loss = 0
+        self.photometric_loss = 0
 
     def set_to_worst(self):
         self.irmse = np.inf
@@ -47,7 +50,8 @@ class Result(object):
         self.gpu_time = 0
 
     def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, lg10, \
-            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, photometric=0):
+            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, \
+            loss=0, depth=0, smooth=0, photometric=0):
         self.irmse = irmse
         self.imae = imae
         self.mse = mse
@@ -62,11 +66,14 @@ class Result(object):
         self.data_time = data_time
         self.gpu_time = gpu_time
         self.silog = silog
-        self.photometric = photometric
         self.avg_target = avg_target
         self.avg_pred = avg_pred
+        self.loss = loss
+        self.depth_loss = depth
+        self.smooth_loss = smooth
+        self.photometric_loss = photometric
 
-    def evaluate(self, output, target, photometric=0):
+    def evaluate(self, output, target, loss=0, depth=0, smooth=0, photometric=0):
         k = 1 + round(0.9 * (target.numel() - 1))
         result = target.view(-1).kthvalue(k).values.item()
 
@@ -110,7 +117,10 @@ class Result(object):
         self.irmse = math.sqrt((torch.pow(abs_inv_diff, 2)).mean())
         self.imae = float(abs_inv_diff.mean())
 
-        self.photometric = float(photometric)
+        self.loss = float(loss)
+        self.depth_loss = float(depth)
+        self.smooth_loss = float(smooth)
+        self.photometric_loss = float(photometric)
 
 
 class AverageMeter(object):
@@ -132,10 +142,13 @@ class AverageMeter(object):
         self.sum_delta3 = 0
         self.sum_data_time = 0
         self.sum_gpu_time = 0
-        self.sum_photometric = 0
         self.sum_silog = 0
         self.sum_avg_target = 0
         self.sum_avg_pred = 0
+        self.sum_loss = 0
+        self.sum_depth_loss = 0
+        self.sum_smooth_loss = 0
+        self.sum_photometric_loss = 0
 
     def update(self, result, gpu_time, data_time, n=1):
         self.count += n
@@ -153,9 +166,12 @@ class AverageMeter(object):
         self.sum_data_time += n * data_time
         self.sum_gpu_time += n * gpu_time
         self.sum_silog += n * result.silog
-        self.sum_photometric += n * result.photometric
         self.sum_avg_target += n * result.avg_target
         self.sum_avg_pred += n * result.avg_pred
+        self.sum_loss += n * result.loss
+        self.sum_depth_loss += n * result.depth_loss
+        self.sum_smooth_loss += n * result.smooth_loss
+        self.sum_photometric_loss += n * result.photometric_loss
 
     def average(self):
         avg = Result()
@@ -169,5 +185,6 @@ class AverageMeter(object):
                 self.sum_delta3 / self.count, self.sum_gpu_time / self.count,
                 self.sum_data_time / self.count, self.sum_silog / self.count,
                 self.sum_avg_target / self.count, self.sum_avg_pred / self.count,
-                self.sum_photometric / self.count)
+                self.sum_loss / self.count, self.sum_depth_loss / self.count,
+                self.sum_smooth_loss / self.count, self.sum_photometric_loss / self.count)
         return avg

@@ -200,7 +200,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
         start = time.time()
         pred = model(batch_data)
-        depth_loss, photometric_loss, smooth_loss, mask = 0, 0, 0, None
+        loss, depth_loss, photometric_loss, smooth_loss, mask = 0, 0, 0, 0, None
         if mode == 'train':
             # Loss 1: the direct depth supervision from ground truth label
             # mask=1 indicates that a pixel does not ground truth labels
@@ -254,10 +254,11 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
         # measure accuracy and record loss
         with torch.no_grad():
+
             mini_batch_size = next(iter(batch_data.values())).size(0)
             result = Result()
             if mode != 'test_prediction' and mode != 'test_completion':
-                result.evaluate(pred.data, gt.data, photometric_loss)
+                result.evaluate(pred.data, gt.data, loss, depth_loss, smooth_loss, photometric_loss)
             [
                 m.update(result, gpu_time, data_time, mini_batch_size)
                 for m in meters
@@ -271,7 +272,6 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                 skip = 100
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
             logger.conditional_save_pred(mode, i, pred, epoch)
-
     avg = logger.conditional_save_info(mode, average_meter, epoch)
     is_best = logger.rank_conditional_save_best(mode, avg, epoch)
     if is_best and not (mode == "train"):
