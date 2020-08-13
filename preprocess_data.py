@@ -1,4 +1,3 @@
-import math
 import shutil
 
 import cv2
@@ -7,10 +6,8 @@ import rawpy
 import imageio
 import glob
 
-import torch
 from PIL import Image
 from scipy.interpolate import griddata
-# import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
@@ -26,7 +23,6 @@ def crop_image(image):
     x = round((h - h_orig) / 2)
     y = round((w - w_orig) / 2)
     crop_img = image[x:x + h_orig, y:y + w_orig]
-    # crop_img = image[x - 100:x + h_orig - 100, y:y + w_orig]
     return crop_img
 
 
@@ -141,19 +137,18 @@ def tif_to_png(maps_dir):
         # # Image.fromarray((colored_image[:, :, :3] * 255).astype(np.uint8)).save(colored_image_name)
 
 
-def gt_to_sparse(maps_dir, nsamples):
-
-    output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(nsamples))
+def gt_to_sparse(maps_dir, n_samples):
+    output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(n_samples))
     if not os.path.isdir(output_dir_sparse):
         os.mkdir(output_dir_sparse)
-    output_dir_linear_interp = os.path.join(maps_dir, "interp_" + str(nsamples))
+    output_dir_linear_interp = os.path.join(maps_dir, "interp_" + str(n_samples))
     if not os.path.isdir(output_dir_linear_interp):
         os.mkdir(output_dir_linear_interp)
     for image in glob.glob(os.path.join(maps_dir, "*.png")):
         png_im = np.array(Image.open(image)).astype("uint16")
         new_depth = np.zeros(png_im.shape).astype("uint16")
         y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
-        chosen_pixels = random.sample(range(0, x_idx.size), k=min(x_idx.size, nsamples))  # k=int(x_idx.size * 0.1)
+        chosen_pixels = random.sample(range(0, x_idx.size), k=min(x_idx.size, n_samples))  # k=int(x_idx.size * 0.1)
         ix = []
         iy = []
         for i in range(0, len(chosen_pixels)):
@@ -175,6 +170,7 @@ def gt_to_sparse(maps_dir, nsamples):
         interpolated_im_u = np.array(interpolated_im).astype("uint16")
         image_name_interp = os.path.join(output_dir_linear_interp, image.split('/')[-1].split('.')[0] + "_interp.png")
         cv2.imwrite(image_name_interp, interpolated_im_u)
+
         # # colorize image
         # depth_norm = (interpolated_im_u - np.min(interpolated_im_u)) / \
         #              (np.max(interpolated_im_u) - np.min(interpolated_im_u))
@@ -184,21 +180,6 @@ def gt_to_sparse(maps_dir, nsamples):
         # image_to_write = cv2.cvtColor(interp_color, cv2.COLOR_RGB2BGR)
         # image_name_color = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp_col.png")
         # cv2.imwrite(image_name_color, image_to_write)
-    #
-    #     # calc RMSE between gt and interp
-    #     if 'val' in maps_dir:
-    #         depth_gt = png_im.astype(np.float) / 256.
-    #         depth_gt = np.expand_dims(depth_gt, -1)
-    #         depth_interp = interpolated_im_u.astype(np.float) / 256.
-    #         depth_interp = np.expand_dims(depth_interp, -1)
-    #         valid_mask = 0.1 < depth_gt < np.percentile(depth_gt, 90)
-    #         # convert from meters to mm
-    #         target_mm = 1e3 * depth_gt[valid_mask]
-    #         output_mm = 1e3 * depth_interp[valid_mask]
-    #         RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
-    #         MAE += float(((output_mm - target_mm).abs()).mean())
-    #         count += 1
-    # print(RMSE/count)
 
 
 def save_depth_as_uint16(maps_dir):
@@ -235,7 +216,6 @@ def colorize_depth():
     transform_geometric = transforms.Compose([
         transforms.BottomCrop((oheight, owidth))])
 
-    # fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
     skip = 80
     top_percent = 90
     for i in range(3):  # range(0, len(gt_images)):
@@ -286,15 +266,15 @@ def colorize_depth():
     ax.set_yticks([])
     plt.show()
 
-    # diff_tot = np.hstack(diff_list)
-    # ax2 = plt.gca()
-    # im2 = ax2.imshow(diff_tot, cmap="jet")
-    # divider = make_axes_locatable(ax2)
-    # cax2 = divider.append_axes("bottom", size="7%", pad="2%")
-    # plt.colorbar(im2, cax=cax2, orientation='horizontal', label='depth [m]')
-    # ax2.set_xticks([])
-    # ax2.set_yticks([])
-    # plt.show()
+    diff_tot = np.hstack(diff_list)
+    ax2 = plt.gca()
+    im2 = ax2.imshow(diff_tot, cmap="jet")
+    divider = make_axes_locatable(ax2)
+    cax2 = divider.append_axes("bottom", size="7%", pad="2%")
+    plt.colorbar(im2, cax=cax2, orientation='horizontal', label='depth [m]')
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    plt.show()
 
     # rgb_tot = np.hstack(rgb_list)
     # ax = plt.gca()
@@ -370,12 +350,12 @@ def main():
     # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
     # tif_to_png(depthmaps_dir)
 
-    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/tif'
-    # save_depth_as_uint16(depthmaps_png)
+    # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/tif'
+    # save_depth_as_uint16(depthmaps_dir)
 
     # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16/val'
-    # nsamples = 500
-    # gt_to_sparse(depthmaps_png, nsamples)
+    # n_samples = 500
+    # gt_to_sparse(depthmaps_png, n_samples)
 
     # gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test'
     # interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test'

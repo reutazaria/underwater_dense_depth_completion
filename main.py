@@ -13,7 +13,6 @@ import criteria
 import helper
 from inverse_warp import Intrinsics, homography_from
 import warnings
-import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -357,7 +356,7 @@ def main():
 
     if is_eval:
         print("=> starting model evaluation ...")
-        result, is_best = iterate("val", args, val_loader, model, None, logger, checkpoint['epoch'])
+        iterate("val", args, val_loader, model, None, logger, checkpoint['epoch'])
         return
 
     # main loop
