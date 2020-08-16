@@ -74,10 +74,10 @@ class Result(object):
         self.photometric_loss = photometric
 
     def evaluate(self, output, target, loss=0, depth=0, smooth=0, photometric=0):
-        k = 1 + round(0.9 * (target.numel() - 1))
-        result = target.view(-1).kthvalue(k).values.item()
+        # k = 1 + round(0.9 * (target.numel() - 1))
+        # result = target.view(-1).kthvalue(k).values.item()
 
-        target[target > result] = 0
+        # target[target > result] = 0
 
         valid_mask = target > 0.1
 
