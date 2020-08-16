@@ -46,10 +46,10 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/sparse/train/*.png')
+            'SouthCarolinaCave/depthMaps/sparse/train/truncate/*.png')
         glob_gt = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/uint16/train/*.png')
+            'SouthCarolinaCave/depthMaps/uint16/train/truncate/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
             'SouthCarolinaCave/cave_seaerra_lft_to1500/png/train/*.png')
@@ -59,10 +59,10 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/sparse/test/*.png')
+                'SouthCarolinaCave/depthMaps/sparse/test/truncate/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/uint16/test/*.png')
+                'SouthCarolinaCave/depthMaps/uint16/test/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
                 "SouthCarolinaCave/cave_seaerra_lft_to1500/png/test/*.png")
@@ -71,10 +71,10 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/sparse/val/*.png')
+                'SouthCarolinaCave/depthMaps/sparse/val/truncate/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/uint16/val/*.png')
+                'SouthCarolinaCave/depthMaps/uint16/val/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
                 "SouthCarolinaCave/cave_seaerra_lft_to1500/png/val/*.png")
