@@ -1,5 +1,3 @@
-import shutil
-
 import cv2
 import os
 import rawpy
@@ -67,27 +65,6 @@ def raw_to_png_orig(images_dir):
             imageio.imsave(image_name, rgb)
 
 
-def raw_to_png(images_dir):
-    output_dir = os.path.join(images_dir, "png_resized_new")
-    if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
-    for image in glob.glob(os.path.join(images_dir, "*NEF")):
-        with rawpy.imread(image) as raw:
-            rgb = raw.postprocess()
-            orig_im = cv2.imread('../data/CaesareaSet/enhanced/input/seaErra_in_01914.png')
-            h_orig, w_orig, c = orig_im.shape
-            scale = w_orig / rgb.shape[1]
-            # scale = 0.1648
-            width = int(rgb.shape[1] * scale)
-            height = int(rgb.shape[0] * scale)
-            dim = (width, height)
-            resized_rgb = cv2.resize(rgb, dim, interpolation=cv2.INTER_AREA)
-            # cropped_image = crop_image(resized_rgb)
-            image_name_cropped = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
-            print("saving image: ", image_name_cropped)
-            imageio.imsave(image_name_cropped, resized_rgb)
-
-
 def tif_to_png(maps_dir):
     output_dir = os.path.join(maps_dir, "png")
     if not os.path.isdir(output_dir):
@@ -137,6 +114,59 @@ def tif_to_png(maps_dir):
         # # Image.fromarray((colored_image[:, :, :3] * 255).astype(np.uint8)).save(colored_image_name)
 
 
+def save_depth_as_uint16(maps_dir):
+    output_dir = os.path.join(maps_dir, "uint16")
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
+    for image in glob.glob(os.path.join(maps_dir, "*.tif")):
+        png_im = np.array(Image.open(image))  # .convert('L'))
+        img = (png_im * 256).astype('uint16')
+        file_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
+        cv2.imwrite(file_name, img)
+
+
+def calc_depth_hist():
+    main_dir = '../data/SouthCarolinaCave/depthMaps/uint16'
+    options = ['train', 'val', 'test']
+    fig, axs = plt.subplots(3, 1)
+    fig.suptitle('Depth histograms - "Cave" data-set')
+    j = 0
+    for o in options:
+        hist = 0
+        total_pixels = 0
+        gt_dir = os.path.join(main_dir, o)
+        gt_images = sorted(os.listdir(gt_dir))
+        for i in range(0, len(gt_images)):
+            gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
+            gt_im = gt_im.astype(np.float) / 256.
+            gt_im = gt_im[gt_im > 0.0]
+            gt_im = gt_im[gt_im <= 15.0]
+            total_pixels += len(gt_im)
+            hist += np.bincount(gt_im.astype('int64').ravel(), minlength=16)
+        axs[j].plot(hist / total_pixels * 100, label=o + ' set')
+        axs[j].legend(loc='upper right')
+        if j == 2:
+            axs[j].set(xlabel='depth [m]')
+        if j == 1:
+            axs[j].set(ylabel='pixels [%]')
+        axs[j].grid(True)
+        j += 1
+    plt.show()
+
+
+def truncate_depth_maps(maps_dir, value):
+    output_dir = os.path.join(maps_dir, "truncate")
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
+    for image in glob.glob(os.path.join(maps_dir, "*.png")):
+        png_im = np.array(Image.open(image))
+        png_im = png_im.astype(np.float) / 256.
+        png_im[png_im > value] = 0.0
+        img = (png_im * 256).astype('uint16')
+        file_name = os.path.join(output_dir, image.split('/')[-1])
+        cv2.imwrite(file_name, img)
+
+
 def gt_to_sparse(maps_dir, n_samples):
     output_dir_sparse = os.path.join(maps_dir, "sparse_" + str(n_samples))
     if not os.path.isdir(output_dir_sparse):
@@ -148,7 +178,9 @@ def gt_to_sparse(maps_dir, n_samples):
         png_im = np.array(Image.open(image)).astype("uint16")
         new_depth = np.zeros(png_im.shape).astype("uint16")
         y_idx, x_idx = np.where(png_im > 0)  # list of all the indices with pixel value 1
-        chosen_pixels = random.sample(range(0, x_idx.size), k=min(x_idx.size, n_samples))  # k=int(x_idx.size * 0.1)
+        if x_idx.size < n_samples:
+            continue
+        chosen_pixels = random.sample(range(0, x_idx.size), k=n_samples)  # k=int(x_idx.size * 0.1)
         ix = []
         iy = []
         for i in range(0, len(chosen_pixels)):
@@ -171,26 +203,37 @@ def gt_to_sparse(maps_dir, n_samples):
         image_name_interp = os.path.join(output_dir_linear_interp, image.split('/')[-1].split('.')[0] + "_interp.png")
         cv2.imwrite(image_name_interp, interpolated_im_u)
 
-        # # colorize image
-        # depth_norm = (interpolated_im_u - np.min(interpolated_im_u)) / \
-        #              (np.max(interpolated_im_u) - np.min(interpolated_im_u))
-        # cmap = plt.cm.jet
-        # depth_color = 255 * cmap(depth_norm)[:, :, :3]  # H, W, C
-        # interp_color = depth_color.astype('uint8')
-        # image_to_write = cv2.cvtColor(interp_color, cv2.COLOR_RGB2BGR)
-        # image_name_color = os.path.join(output_dir_sparse, image.split('/')[-1].split('.')[0] + "_interp_col.png")
-        # cv2.imwrite(image_name_color, image_to_write)
 
+def calc_errors(gt_dir, interp_dir):
+    RMSE = 0
+    MAE = 0
+    count = 0
+    o_height, o_width = 512, 800
+    transform_geometric = transforms.Compose([
+        transforms.BottomCrop((o_height, o_width))])
 
-def save_depth_as_uint16(maps_dir):
-    output_dir = os.path.join(maps_dir, "uint16")
-    if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
-    for image in glob.glob(os.path.join(maps_dir, "*.tif")):
-        png_im = np.array(Image.open(image))  # .convert('L'))
-        img = (png_im * 256).astype('uint16')
-        file_name = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
-        cv2.imwrite(file_name, img)
+    gt_images = sorted(os.listdir(gt_dir))
+    interp_images = sorted(os.listdir(interp_dir))
+    for i in range(0, len(gt_images)):
+        depth_gt = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
+        depth_gt = depth_gt.astype(np.float) / 256.
+        depth_gt = transform_geometric(depth_gt)
+        depth_gt = np.expand_dims(depth_gt, -1)
+        depth_interp = np.array(Image.open(os.path.join(interp_dir, interp_images[i])))
+        depth_interp = depth_interp.astype(np.float) / 256.
+        depth_interp = transform_geometric(depth_interp)
+        depth_interp = np.expand_dims(depth_interp, -1)
+
+        # depth_gt[depth_gt > np.percentile(depth_gt, 90)] = 0
+        valid_mask = depth_gt > 0.1
+        # convert from meters to mm
+        target_mm = 1e3 * depth_gt[valid_mask]
+        output_mm = 1e3 * depth_interp[valid_mask]
+        RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
+        MAE += float(np.mean(np.abs(output_mm - target_mm)))
+        count += 1
+    print("RMSE: ", RMSE/count)
+    print("MAE: ", MAE/count)
 
 
 def colorize_depth():
@@ -281,55 +324,6 @@ def colorize_depth():
     # im = ax.imshow(rgb_tot)
 
 
-def calc_errors(gt_dir, interp_dir):
-    RMSE = 0
-    MAE = 0
-    count = 0
-    o_height, o_width = 512, 800
-    transform_geometric = transforms.Compose([
-        transforms.BottomCrop((o_height, o_width))])
-
-    gt_images = sorted(os.listdir(gt_dir))
-    interp_images = sorted(os.listdir(interp_dir))
-    for i in range(0, len(gt_images)):
-        depth_gt = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
-        depth_gt = depth_gt.astype(np.float) / 256.
-        depth_gt = transform_geometric(depth_gt)
-        depth_gt = np.expand_dims(depth_gt, -1)
-        depth_interp = np.array(Image.open(os.path.join(interp_dir, interp_images[i])))
-        depth_interp = depth_interp.astype(np.float) / 256.
-        depth_interp = transform_geometric(depth_interp)
-        depth_interp = np.expand_dims(depth_interp, -1)
-
-        depth_gt[depth_gt > np.percentile(depth_gt, 90)] = 0
-        valid_mask = depth_gt > 0.1
-        # convert from meters to mm
-        target_mm = 1e3 * depth_gt[valid_mask]
-        output_mm = 1e3 * depth_interp[valid_mask]
-        RMSE += np.sqrt(np.mean((output_mm - target_mm) ** 2))
-        MAE += float(np.mean(np.abs(output_mm - target_mm)))
-        count += 1
-    print("RMSE: ", RMSE/count)
-    print("MAE: ", MAE/count)
-
-
-def make_train_val_sets(input_dir, depth_dir):
-    input_val_dir = os.path.join(input_dir, '../val')
-    if not os.path.isdir(input_val_dir):
-        os.mkdir(input_val_dir)
-    depth_val_dir = os.path.join(depth_dir, '../val')
-    if not os.path.isdir(depth_val_dir):
-        os.mkdir(depth_val_dir)
-    input_images = sorted(glob.glob(os.path.join(input_dir, "*.png")))
-    depth_images = sorted(glob.glob(os.path.join(depth_dir, "*.png")))
-    n_samples = len(os.listdir(input_dir))
-    n_val = round(n_samples*0.2)
-    selected_val = random.sample(range(1, n_samples), k=n_val)
-    for i in selected_val:
-        shutil.move(input_images[i], input_val_dir)
-        shutil.move(depth_images[i], depth_val_dir)
-
-
 def rename_files():
     dir_name = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/'
     for f in os.listdir(dir_name):
@@ -340,11 +334,6 @@ def rename_files():
 
 
 def main():
-    # video_name = 'seaErraCaesarea.avi'
-    # extract_video_images(video_name)
-    # images_dir = '../data/D5/Raw'
-    # raw_to_png_orig(images_dir)
-    # raw_to_png(images_dir)
 
     # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/png'
     # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
@@ -353,18 +342,67 @@ def main():
     # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/tif'
     # save_depth_as_uint16(depthmaps_dir)
 
-    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16/val'
+    # calc_depth_hist()
+
+    # depthmaps_dir = '../data/SouthCarolinaCave/depthMaps/uint16/train'
+    # value = 4.0
+    # truncate_depth_maps(depthmaps_dir, value)
+
+    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16/train/truncate'
     # n_samples = 500
     # gt_to_sparse(depthmaps_png, n_samples)
 
-    # gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test'
-    # interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test'
-    # calc_errors(gt_dir, interp_dir)
+    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test/truncate'
+    interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
+    calc_errors(gt_dir, interp_dir)
 
     # rename_files()
 
-    colorize_depth()
+    # colorize_depth()
 
 
 if __name__ == '__main__':
     main()
+
+
+# def make_train_val_sets(input_dir, depth_dir):
+#     input_val_dir = os.path.join(input_dir, '../val')
+#     if not os.path.isdir(input_val_dir):
+#         os.mkdir(input_val_dir)
+#     depth_val_dir = os.path.join(depth_dir, '../val')
+#     if not os.path.isdir(depth_val_dir):
+#         os.mkdir(depth_val_dir)
+#     input_images = sorted(glob.glob(os.path.join(input_dir, "*.png")))
+#     depth_images = sorted(glob.glob(os.path.join(depth_dir, "*.png")))
+#     n_samples = len(os.listdir(input_dir))
+#     n_val = round(n_samples*0.2)
+#     selected_val = random.sample(range(1, n_samples), k=n_val)
+#     for i in selected_val:
+#         shutil.move(input_images[i], input_val_dir)
+#         shutil.move(depth_images[i], depth_val_dir)
+
+# video_name = 'seaErraCaesarea.avi'
+# extract_video_images(video_name)
+# images_dir = '../data/D5/Raw'
+# raw_to_png_orig(images_dir)
+# raw_to_png(images_dir)
+
+# def raw_to_png(images_dir):
+#     output_dir = os.path.join(images_dir, "png_resized_new")
+#     if not os.path.isdir(output_dir):
+#         os.mkdir(output_dir)
+#     for image in glob.glob(os.path.join(images_dir, "*NEF")):
+#         with rawpy.imread(image) as raw:
+#             rgb = raw.postprocess()
+#             orig_im = cv2.imread('../data/CaesareaSet/enhanced/input/seaErra_in_01914.png')
+#             h_orig, w_orig, c = orig_im.shape
+#             scale = w_orig / rgb.shape[1]
+#             # scale = 0.1648
+#             width = int(rgb.shape[1] * scale)
+#             height = int(rgb.shape[0] * scale)
+#             dim = (width, height)
+#             resized_rgb = cv2.resize(rgb, dim, interpolation=cv2.INTER_AREA)
+#             # cropped_image = crop_image(resized_rgb)
+#             image_name_cropped = os.path.join(output_dir, image.split('/')[-1].split('.')[0] + ".png")
+#             print("saving image: ", image_name_cropped)
+#             imageio.imsave(image_name_cropped, resized_rgb)
