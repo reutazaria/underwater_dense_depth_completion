@@ -113,8 +113,8 @@ parser.add_argument(
     '--data',
     metavar='DATA',
     default="D5",
-    choices=['kitti', 'D5', 'caesarea', 'cave'],
-    help='kitti | D5 | caesarea | cave')
+    choices=['kitti', 'D5', 'nachsholim', 'cave'],
+    help='kitti | D5 | nachsholim | cave')
 parser.add_argument('--save_pred',
                     action="store_true",
                     help='save prediction images')
@@ -152,9 +152,9 @@ smoothness_criterion = criteria.SmoothnessLoss()
 if args.data == 'D5':
     from dataloaders.D5_loader import load_calib, oheight, owidth
     from dataloaders.D5_loader import D5Depth as Depth
-elif args.data == 'caesarea':
-    from dataloaders.caesarea_loader import load_calib, oheight, owidth
-    from dataloaders.caesarea_loader import CaesareaDepth as Depth
+elif args.data == 'nachsholim':
+    from dataloaders.nachsholim_loader import load_calib, oheight, owidth
+    from dataloaders.nachsholim_loader import NachsholimDepth as Depth
 elif args.data == 'cave':
     from dataloaders.SC_Cave_loader import load_calib, oheight, owidth
     from dataloaders.SC_Cave_loader import CaveDepth as Depth
@@ -265,8 +265,10 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
             if args.data == 'D5':
                 skip = 1
-            elif args.data == 'caesarea' or args.data == 'cave':
+            elif args.data == 'cave':
                 skip = 70
+            elif args.data == 'nachsholim':
+                skip = 500
             elif args.data == 'kitti':
                 skip = 100
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)

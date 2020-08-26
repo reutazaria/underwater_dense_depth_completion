@@ -1,14 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
 model_dir = '../results/mode=dense.data=cave.input=rgbd.resnet18.epochs100.criterion=l2.lr=0.0001.bs=2.wd=0' \
-            '.pretrained=True.jitter=0.1.time=2020-08-11@16-03'
-train_filename = '../results/mode=dense.data=cave.input=rgbd.resnet18.epochs100.criterion=l2.lr=0.0001.bs=2.wd=0' \
-                 '.pretrained=True.jitter=0.1.time=2020-08-11@16-03/train.csv'
+            '.pretrained=True.jitter=0.1.time=2020-08-17@00-56_truncate'
+train_filename = os.path.join(model_dir, 'train.csv')
 train_data = pd.read_csv(train_filename)
 epochs = train_data['epoch'].values
-train_loss = train_data['loss'].values
+train_loss = train_data['loss'].values*1000
 depth_loss = train_data['depth_loss'].values
 smooth_loss = train_data['smooth_loss'].values
 photometric_loss = train_data['photometric_loss'].values
@@ -21,8 +21,7 @@ print(
                                                             epoch_num))
 
 
-val_filename = '../results/mode=dense.data=cave.input=rgbd.resnet18.epochs100.criterion=l2.lr=0.0001.bs=2.wd=0' \
-               '.pretrained=True.jitter=0.1.time=2020-08-11@16-03/val.csv'
+val_filename = os.path.join(model_dir, 'val.csv')
 val_data = pd.read_csv(val_filename)
 val_loss = val_data['loss'].values
 # depth_loss = val_data['depth_loss'].values
@@ -43,7 +42,7 @@ plt.subplot(121)
 plt.plot(epochs, train_loss, label='Train Loss')
 plt.legend(loc='upper right')
 plt.xlabel('Epoch')
-plt.ylabel('Loss')
+plt.ylabel('Loss - MSE [mm]')
 plt.title('Train Loss')
 plt.grid(True)
 # fig0.savefig(model_dir + '/' + 'train_loss.png')
@@ -56,4 +55,6 @@ plt.xlabel('Epoch')
 plt.ylabel('RMSE [mm]')
 plt.title('Validation Error')
 plt.grid(True)
-fig1.savefig(model_dir + '/' + 'val_error.png')
+plt.show()
+
+

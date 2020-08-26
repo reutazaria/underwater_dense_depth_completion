@@ -1,16 +1,19 @@
-import cv2
-import os
-import rawpy
-import imageio
 import glob
-
-from PIL import Image
-from scipy.interpolate import griddata
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import numpy as np
+import os
 import random
+import scipy
+
+import cv2
+import imageio
+import matplotlib.pyplot as plt
+import numpy as np
+import rawpy
+from PIL import Image
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import griddata
+
 from dataloaders import transforms
+from vis_utils import depth_colorize
 
 
 def crop_image(image):
@@ -125,11 +128,10 @@ def save_depth_as_uint16(maps_dir):
         cv2.imwrite(file_name, img)
 
 
-def calc_depth_hist():
-    main_dir = '../data/SouthCarolinaCave/depthMaps/uint16'
+def calc_depth_hist(main_dir):
     options = ['train', 'val', 'test']
     fig, axs = plt.subplots(3, 1)
-    fig.suptitle('Depth histograms - "Cave" data-set')
+    fig.suptitle('Depth histograms - "Nachsholim" data-set')
     j = 0
     for o in options:
         hist = 0
@@ -137,6 +139,8 @@ def calc_depth_hist():
         gt_dir = os.path.join(main_dir, o)
         gt_images = sorted(os.listdir(gt_dir))
         for i in range(0, len(gt_images)):
+            if os.path.isdir(os.path.join(gt_dir, gt_images[i])):
+                continue
             gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
             gt_im = gt_im.astype(np.float) / 256.
             gt_im = gt_im[gt_im > 0.0]
@@ -240,17 +244,18 @@ def colorize_depth():
     img_list = []
     diff_list = []
     rgb_list = []
-    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test'
+    pred_with_sparse_list = []
+    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test/truncate'
     gt_images = sorted(os.listdir(gt_dir))
-    sparse_dir = '../data/SouthCarolinaCave/depthMaps/sparse/test'
+    sparse_dir = '../data/SouthCarolinaCave/depthMaps/sparse/test/truncate'
     sparse_images = sorted(os.listdir(sparse_dir))
-    pred_d_dir = '../data/SouthCarolinaCave/results/d'
+    pred_d_dir = '../data/SouthCarolinaCave/results/d/truncate'
     pred_d_images = sorted(os.listdir(pred_d_dir))
-    pred_rgb_dir = '../data/SouthCarolinaCave/results/rgb'
+    pred_rgb_dir = '../data/SouthCarolinaCave/results/rgb/truncate'
     pred_rgb_images = sorted(os.listdir(pred_rgb_dir))
-    pred_rgbd_dir = '../data/SouthCarolinaCave/results/rgbd'
+    pred_rgbd_dir = '../data/SouthCarolinaCave/results/rgbd/truncate'
     pred_rgbd_images = sorted(os.listdir(pred_rgbd_dir))
-    linear_interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test'
+    linear_interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
     interp_images = sorted(os.listdir(linear_interp_dir))
     rgb_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/test'
     rgb_images = sorted(os.listdir(rgb_dir))
@@ -260,46 +265,64 @@ def colorize_depth():
         transforms.BottomCrop((oheight, owidth))])
 
     skip = 80
-    top_percent = 90
+    # top_percent = 90
     for i in range(3):  # range(0, len(gt_images)):
         gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i*skip])))
         gt_im = gt_im.astype(np.float) / 256.
         gt_im = transform_geometric(gt_im)
-        gt_im[gt_im > np.percentile(gt_im, top_percent)] = 0.0
+        # gt_im[gt_im > np.percentile(gt_im, top_percent)] = 0.0
         sparse_im = np.array(Image.open(os.path.join(sparse_dir, sparse_images[i*skip])))
         sparse_im = sparse_im.astype(np.float) / 256.
         sparse_im = transform_geometric(sparse_im)
-        sparse_im[sparse_im > np.percentile(gt_im, top_percent)] = 0.0
+        sparse_dilate = cv2.dilate(sparse_im, np.ones((6, 6), np.uint8), iterations=1)
+        # sparse_im[sparse_im > np.percentile(gt_im, top_percent)] = 0.0
         pred_d_im = np.array(Image.open(os.path.join(pred_d_dir, pred_d_images[i*skip])))
         pred_d_im = pred_d_im.astype(np.float) / 256.
-        pred_d_im[pred_d_im > np.percentile(gt_im, top_percent)] = 0.0
+        # pred_d_im[pred_d_im > np.percentile(gt_im, top_percent)] = 0.0
         pred_rgb_im = np.array(Image.open(os.path.join(pred_rgb_dir, pred_rgb_images[i*skip])))
         pred_rgb_im = pred_rgb_im.astype(np.float) / 256.
-        pred_rgb_im[pred_rgb_im > np.percentile(gt_im, top_percent)] = 0.0
+        # pred_rgb_im[pred_rgb_im > np.percentile(gt_im, top_percent)] = 0.0
         pred_rgbd_im = np.array(Image.open(os.path.join(pred_rgbd_dir, pred_rgbd_images[i*skip])))
         pred_rgbd_im = pred_rgbd_im.astype(np.float) / 256.
-        pred_rgbd_im[pred_rgbd_im > np.percentile(gt_im, top_percent)] = 0.0
+        # pred_rgbd_im[pred_rgbd_im > np.percentile(gt_im, top_percent)] = 0.0
         interp_im = np.array(Image.open(os.path.join(linear_interp_dir, interp_images[i*skip])))
         interp_im = interp_im.astype(np.float) / 256.
         interp_im = transform_geometric(interp_im)
-        interp_im[interp_im > np.percentile(gt_im, top_percent)] = 0.0
+        # interp_im[interp_im > np.percentile(gt_im, top_percent)] = 0.0
         rgb_im = np.array(Image.open(os.path.join(rgb_dir, rgb_images[i*skip])))
         rgb_im = transform_geometric(rgb_im)
 
         depth_im = np.concatenate((sparse_im, pred_d_im, pred_rgb_im, pred_rgbd_im, gt_im, interp_im), axis=0)
+        # depth_im = np.concatenate((sparse_dilate, gt_im), axis=0)
         img_list.append(depth_im)
+
+        sparse_dilate_colored = depth_colorize(sparse_dilate)
+        pred_rgbd_im_colored = depth_colorize(pred_rgbd_im)
+        (pred_rgbd_im_colored[:, :, 0])[sparse_dilate > 0] = 255
+        (pred_rgbd_im_colored[:, :, 1])[sparse_dilate > 0] = 255
+        (pred_rgbd_im_colored[:, :, 2])[sparse_dilate > 0] = 255
+        pred_d_im_colored = depth_colorize(pred_d_im)
+        (pred_d_im_colored[:, :, 0])[sparse_dilate > 0] = 255
+        (pred_d_im_colored[:, :, 1])[sparse_dilate > 0] = 255
+        (pred_d_im_colored[:, :, 2])[sparse_dilate > 0] = 255
+        interp_im_colored = depth_colorize(interp_im)
+        (interp_im_colored[:, :, 0])[sparse_dilate > 0] = 255
+        (interp_im_colored[:, :, 1])[sparse_dilate > 0] = 255
+        (interp_im_colored[:, :, 2])[sparse_dilate > 0] = 255
+        pred_with_sparse = np.concatenate((sparse_dilate_colored, pred_d_im_colored, pred_rgbd_im_colored, interp_im_colored), axis=0)
+        pred_with_sparse_list.append(pred_with_sparse)
 
         diff_im_d = gt_im - pred_d_im
         diff_im_rgb = gt_im - pred_rgb_im
         diff_im_rgbd = gt_im - pred_rgbd_im
         diff_im_interp = gt_im - interp_im
-        # diff_im = np.concatenate((pred_d_im, gt_im, diff_im_d), axis=0)
         diff_im = np.concatenate((diff_im_d, diff_im_rgb, diff_im_rgbd, diff_im_interp), axis=0)
         diff_list.append(diff_im)
 
         rgb_list.append(rgb_im)
 
     depth_tot = np.hstack(img_list)
+    plt.figure(5)
     ax = plt.gca()
     im = ax.imshow(depth_tot, cmap="jet")
     divider = make_axes_locatable(ax)
@@ -310,6 +333,7 @@ def colorize_depth():
     plt.show()
 
     diff_tot = np.hstack(diff_list)
+    plt.figure(2)
     ax2 = plt.gca()
     im2 = ax2.imshow(diff_tot, cmap="jet")
     divider = make_axes_locatable(ax2)
@@ -319,9 +343,22 @@ def colorize_depth():
     ax2.set_yticks([])
     plt.show()
 
-    # rgb_tot = np.hstack(rgb_list)
-    # ax = plt.gca()
-    # im = ax.imshow(rgb_tot)
+    rgb_tot = np.hstack(rgb_list)
+    plt.figure(3)
+    ax3 = plt.gca()
+    ax3.imshow(rgb_tot)
+    plt.show()
+
+    pred_with_sparse_tot = np.hstack(pred_with_sparse_list)
+    plt.figure(4)
+    ax4 = plt.gca()
+    ax4.imshow(pred_with_sparse_tot)
+    divider = make_axes_locatable(ax4)
+    cax4 = divider.append_axes("bottom", size="7%", pad="2%")
+    plt.colorbar(im, cax=cax4, orientation='horizontal', label='depth [m]')
+    ax4.set_xticks([])
+    ax4.set_yticks([])
+    plt.show()
 
 
 def rename_files():
@@ -339,21 +376,22 @@ def main():
     # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
     # tif_to_png(depthmaps_dir)
 
-    # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/tif'
+    # depthmaps_dir = '../data/Nachsholim/depth_lft/tif/test'
     # save_depth_as_uint16(depthmaps_dir)
 
-    # calc_depth_hist()
+    # main_dir = '../data/Nachsholim/depth_lft/uint16'
+    # calc_depth_hist(main_dir)
 
-    # depthmaps_dir = '../data/SouthCarolinaCave/depthMaps/uint16/train'
-    # value = 4.0
+    # depthmaps_dir = '../data/Nachsholim/depth_lft/uint16/test'
+    # value = 7.0
     # truncate_depth_maps(depthmaps_dir, value)
 
-    # depthmaps_png = '../data/SouthCarolinaCave/depthMaps/uint16/train/truncate'
+    # depthmaps_png = '../data/Nachsholim/depth_lft/uint16/test/truncate'
     # n_samples = 500
     # gt_to_sparse(depthmaps_png, n_samples)
 
-    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test/truncate'
-    interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
+    gt_dir = '../data/Nachsholim/depth_lft/uint16/val/truncate'
+    interp_dir = '../data/Nachsholim/depth_lft/interp/val/truncate'
     calc_errors(gt_dir, interp_dir)
 
     # rename_files()

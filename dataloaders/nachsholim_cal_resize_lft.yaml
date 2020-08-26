@@ -1,0 +1,24 @@
+# %YAML:1.0
+# Camera calibration for left side video (60fps) collected in Nachsholim, Israel - June 8th, 2020.
+# Camera calibration and distortion parameters (OpenCV conventions)
+
+Camera.fx: 1282.072956553024
+Camera.fy: 1263.437609090568
+Camera.cx: 508.1440933924753
+Camera.cy: 168.9255226309683
+
+Camera.k1: 0.499778912501694
+Camera.k2: -1.228602523636388
+Camera.p1: 0.0
+Camera.p2: 0.0
+Camera.k3: 0.0
+
+Camera.width: 960
+Camera.height: 540
+
+# Camera frames per second
+Camera.fps: 60
+
+# Color order of the images (0: BGR, 1: RGB)
+Camera.RGB: 1
+
