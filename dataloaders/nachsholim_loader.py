@@ -52,7 +52,7 @@ def get_paths_and_transform(split, args):
             'Nachsholim/depth_lft/uint16/train/truncate/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'Nachsholim/rgb_input/train/*.png')
+            'Nachsholim/rgb_seaErra/train/*.png')
 
     elif split == "val":
         if args.val == "full":
@@ -65,7 +65,7 @@ def get_paths_and_transform(split, args):
                 'Nachsholim/depth_lft/uint16/test/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_input/test/*.png')
+                'Nachsholim/rgb_seaErra/test/*.png')
 
         elif args.val == "select":
             transform = val_transform
@@ -77,7 +77,7 @@ def get_paths_and_transform(split, args):
                 'Nachsholim/depth_lft/uint16/val/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_input/val/*.png')
+                'Nachsholim/rgb_seaErra/val/*.png')
 
     elif split == "test_completion":
         transform = no_transform
@@ -240,13 +240,13 @@ def get_rgb_near(path, args):
 
     def extract_frame_id(filename):
         head, tail = os.path.split(filename)
-        number_string = tail[11:tail.find('.')]
+        number_string = tail[0:tail.find('.')].split('_')[-1]
         number = int(number_string)
         return head, number
 
     def get_nearby_filename(filename, new_id):
         head, tail = os.path.split(filename)
-        number_string = tail[11:tail.find('.')]
+        number_string = tail[0:tail.find('.')].split('_')[-1]
         image_head = tail[0:tail.find(number_string)]
         new_filename = os.path.join(head, image_head + str(new_id).zfill(6) + '.png')
         return new_filename
@@ -255,7 +255,7 @@ def get_rgb_near(path, args):
     count = 0
     max_frame_diff = 3
     candidates = [
-        i - max_frame_diff for i in range(max_frame_diff * 2 + 1)
+        (i - max_frame_diff)*3 for i in range(max_frame_diff * 2 + 1)
         if i - max_frame_diff != 0
     ]
     while True:
@@ -270,7 +270,7 @@ def get_rgb_near(path, args):
 
 
 class NachsholimDepth(data.Dataset):
-    """A data loader for the South Carolina Cave dataset
+    """A data loader for the Nachsholim dataset
     """
 
     def __init__(self, split, args):
