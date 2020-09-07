@@ -3,12 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-model_dir = '../results/mode=dense.data=cave.input=rgbd.resnet18.epochs100.criterion=l2.lr=0.0001.bs=2.wd=0' \
-            '.pretrained=True.jitter=0.1.time=2020-08-17@00-56_truncate'
+model_dir = '../results/mode=dense+photo.w1=0.1.w2=0.1.data=nachsholim.input=rgbd.resnet18.epochs35.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2020-09-02@18-00'
 train_filename = os.path.join(model_dir, 'train.csv')
 train_data = pd.read_csv(train_filename)
 epochs = train_data['epoch'].values
-train_loss = train_data['loss'].values*1000
+train_loss = train_data['loss'].values
 depth_loss = train_data['depth_loss'].values
 smooth_loss = train_data['smooth_loss'].values
 photometric_loss = train_data['photometric_loss'].values
@@ -40,10 +39,13 @@ epochs = range(epoch_num) + np.ones(epoch_num)
 fig0 = plt.figure(1)
 plt.subplot(121)
 plt.plot(epochs, train_loss, label='Train Loss')
+plt.plot(epochs, depth_loss, label='Depth Loss')
+plt.plot(epochs, smooth_loss, label='Smooth Loss')
+plt.plot(epochs, photometric_loss, label='Photometric Loss')
 plt.legend(loc='upper right')
 plt.xlabel('Epoch')
-plt.ylabel('Loss - MSE [mm]')
-plt.title('Train Loss')
+plt.ylabel('Losses')
+plt.title('Train Losses')
 plt.grid(True)
 # fig0.savefig(model_dir + '/' + 'train_loss.png')
 #
