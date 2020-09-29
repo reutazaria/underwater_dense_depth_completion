@@ -80,10 +80,10 @@ def get_paths_and_transform(split, args):
             transform = no_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "depth_selection/val_selection_cropped_original/velodyne_raw/*.png")
+                "val_selection_cropped_original/velodyne_raw/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                "depth_selection/val_selection_cropped_original/groundtruth_depth/*.png"
+                "val_selection_cropped_original/groundtruth_depth/*.png"
             )
 
             def get_rgb_paths(p):
