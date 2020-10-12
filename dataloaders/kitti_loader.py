@@ -80,10 +80,13 @@ def get_paths_and_transform(split, args):
             transform = no_transform
             glob_d = os.path.join(
                 args.data_folder,
-                "val_selection_cropped_original/velodyne_raw/*.png")
+                "depth_selection/val_selection_cropped/velodyne_raw/*.png"
+                # to run on shachar 134 data: "val_selection_cropped_original/velodyne_raw/*.png"
+            )
             glob_gt = os.path.join(
                 args.data_folder,
-                "val_selection_cropped_original/groundtruth_depth/*.png"
+                "depth_selection/val_selection_cropped/groundtruth_depth/*.png"
+                # to run on shachar 134 data: "val_selection_cropped_original/groundtruth_depth/*.png"
             )
 
             def get_rgb_paths(p):
