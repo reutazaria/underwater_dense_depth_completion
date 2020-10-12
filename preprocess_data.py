@@ -240,8 +240,8 @@ def calc_errors(gt_dir, interp_dir):
         Avg_pred += np.mean(output_mm)
         Avg_target += np.mean(target_mm)
         count += 1
-    print("RMSE: ", RMSE/count)
-    print("MAE: ", MAE/count)
+    print("RMSE: ", RMSE / count)
+    print("MAE: ", MAE / count)
     print("Average depth pred: ", Avg_pred / count)
     print("Average depth target: ", Avg_target / count)
 
@@ -253,73 +253,93 @@ def colorize_depth():
     diff_list = []
     rgb_list = []
     pred_with_sparse_list = []
-    # gt_dir = '../data/Nachsholim/depth_lft/uint16/test/truncate'
-    gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test/truncate'
+    gt_dir = '../data/Nachsholim/depth_lft/uint16/test/truncate'
+    # gt_dir = '../data/SouthCarolinaCave/depthMaps/uint16/test/truncate'
     gt_images = sorted(os.listdir(gt_dir))
-    # sparse_dir = '../data/Nachsholim/depth_lft/sparse/test/truncate'
-    sparse_dir = '../data/SouthCarolinaCave/depthMaps/sparse/test/truncate'
+    sparse_dir = '../data/Nachsholim/depth_lft/sparse/test/truncate'
+    # sparse_dir = '../data/SouthCarolinaCave/depthMaps/sparse/test/truncate'
     sparse_images = sorted(os.listdir(sparse_dir))
-    # pred_d_dir = '../data/Nachsholim/results/supervised/d'
-    pred_d_dir = '../data/SouthCarolinaCave/results/supervised/d/truncate'
-    pred_d_images = sorted(os.listdir(pred_d_dir))
-    # pred_rgb_dir = '../data/Nachsholim/results/supervised/rgb'
-    pred_rgb_dir = '../data/SouthCarolinaCave/results/supervised/rgb/truncate'
-    pred_rgb_images = sorted(os.listdir(pred_rgb_dir))
-    # pred_rgbd_dir = '../data/Nachsholim/results/supervised/rgbd'
-    pred_rgbd_dir = '../data/SouthCarolinaCave/results/self-supervised/rgbd'
-    pred_rgbd_images = sorted(os.listdir(pred_rgbd_dir))
-    # linear_interp_dir = '../data/Nachsholim/depth_lft/interp/test/truncate'
-    linear_interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
+    linear_interp_dir = '../data/Nachsholim/depth_lft/interp/test/truncate'
+    # linear_interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
     interp_images = sorted(os.listdir(linear_interp_dir))
-    # rgb_dir = '../data/Nachsholim/rgb_input/test'
-    rgb_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/test'
+    pred_rgb_dir = '../data/Nachsholim/results/supervised/rgb_unenhanced'
+    # pred_rgb_dir = '../data/SouthCarolinaCave/results/supervised/rgb'
+    pred_rgb_images = sorted(os.listdir(pred_rgb_dir))
+    pred_d_dir = '../data/Nachsholim/results/supervised/d'
+    # pred_d_dir = '../data/SouthCarolinaCave/results/supervised/d'
+    pred_d_images = sorted(os.listdir(pred_d_dir))
+    pred_gd_dir = '../data/Nachsholim/results/supervised/gd_unenhanced'
+    # pred_gd_dir = '../data/SouthCarolinaCave/results/supervised/gd'
+    pred_gd_images = sorted(os.listdir(pred_gd_dir))
+    pred_rgbd_dir = '../data/Nachsholim/results/supervised/rgbd_unenhanced'
+    # pred_rgbd_dir = '../data/SouthCarolinaCave/results/supervised/rgbd'
+    pred_rgbd_images = sorted(os.listdir(pred_rgbd_dir))
+    pred_rgbd_photo_dir = '../data/Nachsholim/results/supervised/rgbd_photo_unenhanced'
+    # pred_rgbd_photo_dir = '../data/SouthCarolinaCave/results/supervised/rgbd_photo'
+    pred_rgbd_photo_images = sorted(os.listdir(pred_rgbd_photo_dir))
+    rgb_dir = '../data/Nachsholim/rgb_unenhanced/test'
+    # rgb_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/test'
     rgb_images = sorted(os.listdir(rgb_dir))
 
     oheight, owidth = 512, 800  # 448, 832  #
     transform_geometric = transforms.Compose([
         transforms.BottomCrop((oheight, owidth))])
 
-    skip = 80
+    skip = 200  # 80
     # top_percent = 90
-    for i in range(3):  # range(0, len(gt_images)):
-        # i += 1
-        gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i*skip])))
+    for i in range(1):  # range(0, len(gt_images)):
+        i += 1
+        gt_im = np.array(Image.open(os.path.join(gt_dir, gt_images[i * skip])))
         gt_im = gt_im.astype(np.float) / 256.
         gt_im = transform_geometric(gt_im)
         # gt_im[gt_im > np.percentile(gt_im, top_percent)] = 0.0
-        sparse_im = np.array(Image.open(os.path.join(sparse_dir, sparse_images[i*skip])))
+        sparse_im = np.array(Image.open(os.path.join(sparse_dir, sparse_images[i * skip])))
         sparse_im = sparse_im.astype(np.float) / 256.
         sparse_im = transform_geometric(sparse_im)
         sparse_dilate = cv2.dilate(sparse_im, np.ones((6, 6), np.uint8), iterations=1)
         # sparse_im[sparse_im > np.percentile(gt_im, top_percent)] = 0.0
-        pred_d_im = np.array(Image.open(os.path.join(pred_d_dir, pred_d_images[i*skip])))
+        pred_rgb_im = np.array(Image.open(os.path.join(pred_rgb_dir, pred_rgb_images[i * skip])))
+        pred_rgb_im = pred_rgb_im.astype(np.float) / 256.
+        diff_im_rgb = gt_im - pred_rgb_im
+        # pred_rgb_im[pred_rgb_im > np.percentile(gt_im, top_percent)] = 0.0
+        pred_d_im = np.array(Image.open(os.path.join(pred_d_dir, pred_d_images[i * skip])))
         pred_d_im = pred_d_im.astype(np.float) / 256.
         diff_im_d = gt_im - pred_d_im
         pred_d_sparse = pred_d_im
         pred_d_sparse[sparse_dilate > 0] = 0
         # pred_d_im[pred_d_im > np.percentile(gt_im, top_percent)] = 0.0
-        pred_rgb_im = np.array(Image.open(os.path.join(pred_rgb_dir, pred_rgb_images[i*skip])))
-        pred_rgb_im = pred_rgb_im.astype(np.float) / 256.
-        diff_im_rgb = gt_im - pred_rgb_im
-        # pred_rgb_im[pred_rgb_im > np.percentile(gt_im, top_percent)] = 0.0
-        pred_rgbd_im = np.array(Image.open(os.path.join(pred_rgbd_dir, pred_rgbd_images[i*skip])))
+        pred_gd_im = np.array(Image.open(os.path.join(pred_gd_dir, pred_gd_images[i * skip])))
+        pred_gd_im = pred_gd_im.astype(np.float) / 256.
+        diff_im_gd = gt_im - pred_gd_im
+        pred_gd_sparse = pred_gd_im
+        pred_gd_sparse[sparse_dilate > 0] = 0
+        # pred_gd_im[pred_gd_im > np.percentile(gt_im, top_percent)] = 0.0
+        pred_rgbd_im = np.array(Image.open(os.path.join(pred_rgbd_dir, pred_rgbd_images[i * skip])))
         pred_rgbd_im = pred_rgbd_im.astype(np.float) / 256.
         diff_im_rgbd = gt_im - pred_rgbd_im
         pred_rgbd_sparse = pred_rgbd_im
         pred_rgbd_sparse[sparse_dilate > 0] = 0
         # pred_rgbd_im[pred_rgbd_im > np.percentile(gt_im, top_percent)] = 0.0
-        interp_im = np.array(Image.open(os.path.join(linear_interp_dir, interp_images[i*skip])))
+        pred_rgbd_photo_im = np.array(Image.open(os.path.join(pred_rgbd_photo_dir, pred_rgbd_photo_images[i * skip])))
+        pred_rgbd_photo_im = pred_rgbd_photo_im.astype(np.float) / 256.
+        diff_im_rgbd_photo = gt_im - pred_rgbd_photo_im
+        pred_rgbd_photo_sparse = pred_rgbd_photo_im
+        pred_rgbd_photo_sparse[sparse_dilate > 0] = 0
+        # pred_rgbd_photo_im[pred_rgbd_photo_im > np.percentile(gt_im, top_percent)] = 0.0
+        interp_im = np.array(Image.open(os.path.join(linear_interp_dir, interp_images[i * skip])))
         interp_im = interp_im.astype(np.float) / 256.
         interp_im = transform_geometric(interp_im)
         diff_im_interp = gt_im - interp_im
         interp_sparse = interp_im
         interp_sparse[sparse_dilate > 0] = 0
         # interp_im[interp_im > np.percentile(gt_im, top_percent)] = 0.0
-        rgb_im = np.array(Image.open(os.path.join(rgb_dir, rgb_images[i*skip])))
+
+        rgb_im = np.array(Image.open(os.path.join(rgb_dir, rgb_images[i * skip])))
         rgb_im = transform_geometric(rgb_im)
 
-        # depth_im = np.concatenate((sparse_dilate, pred_rgb_im, pred_d_sparse, pred_rgbd_sparse, interp_sparse, gt_im), axis=0)
-        depth_im = np.concatenate((sparse_dilate, pred_rgbd_sparse, interp_sparse, gt_im), axis=0)
+        depth_im = np.concatenate((sparse_dilate, pred_rgb_im, pred_d_sparse, pred_gd_sparse, pred_rgbd_sparse,
+                                   pred_rgbd_photo_sparse, interp_sparse, gt_im), axis=0)
+        # depth_im = np.concatenate((sparse_dilate, pred_rgbd_sparse, interp_sparse, gt_im), axis=0)
         img_list.append(depth_im)
 
         sparse_dilate_norm = (sparse_dilate - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
@@ -328,18 +348,30 @@ def colorize_depth():
         pred_rgb_norm = (pred_rgb_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
         pred_rgb_im_colored = (255 * cmap(pred_rgb_norm)[:, :, :3]).astype('uint8')
         # pred_rgb_im_colored = depth_colorize(pred_rgb_im)
+        # pred_rgbd_im_colored = depth_colorize(pred_rgbd_im)
         pred_rgbd_norm = (pred_rgbd_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
         pred_rgbd_im_colored = (255 * cmap(pred_rgbd_norm)[:, :, :3]).astype('uint8')
-        # pred_rgbd_im_colored = depth_colorize(pred_rgbd_im)
         (pred_rgbd_im_colored[:, :, 0])[sparse_dilate > 0] = 255
         (pred_rgbd_im_colored[:, :, 1])[sparse_dilate > 0] = 255
         (pred_rgbd_im_colored[:, :, 2])[sparse_dilate > 0] = 255
+        # pred_rgbd_photo_im_colored = depth_colorize(pred_rgbd_photo_im)
+        pred_rgbd_photo_norm = (pred_rgbd_photo_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
+        pred_rgbd_photo_im_colored = (255 * cmap(pred_rgbd_photo_norm)[:, :, :3]).astype('uint8')
+        (pred_rgbd_photo_im_colored[:, :, 0])[sparse_dilate > 0] = 255
+        (pred_rgbd_photo_im_colored[:, :, 1])[sparse_dilate > 0] = 255
+        (pred_rgbd_photo_im_colored[:, :, 2])[sparse_dilate > 0] = 255
         # pred_d_im_colored = depth_colorize(pred_d_im)
         pred_d_norm = (pred_d_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
         pred_d_im_colored = (255 * cmap(pred_d_norm)[:, :, :3]).astype('uint8')
         (pred_d_im_colored[:, :, 0])[sparse_dilate > 0] = 255
         (pred_d_im_colored[:, :, 1])[sparse_dilate > 0] = 255
         (pred_d_im_colored[:, :, 2])[sparse_dilate > 0] = 255
+        # pred_gd_im_colored = depth_colorize(pred_d_im)
+        pred_gd_norm = (pred_gd_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
+        pred_gd_im_colored = (255 * cmap(pred_gd_norm)[:, :, :3]).astype('uint8')
+        (pred_gd_im_colored[:, :, 0])[sparse_dilate > 0] = 255
+        (pred_gd_im_colored[:, :, 1])[sparse_dilate > 0] = 255
+        (pred_gd_im_colored[:, :, 2])[sparse_dilate > 0] = 255
         # interp_im_colored = depth_colorize(interp_im)
         interp_norm = (interp_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
         interp_im_colored = (255 * cmap(interp_norm)[:, :, :3]).astype('uint8')
@@ -349,8 +381,12 @@ def colorize_depth():
         # gt_colored = depth_colorize()
         gt_norm = (gt_im - np.min(depth_im)) / (np.max(depth_im) - np.min(depth_im))
         gt_colored = (255 * cmap(gt_norm)[:, :, :3]).astype('uint8')
-        pred_with_sparse = np.concatenate((sparse_dilate_colored, pred_rgb_im_colored, pred_d_im_colored,
-                                           pred_rgbd_im_colored, interp_im_colored, gt_colored), axis=0)
+
+        pred_with_sparse_1 = np.concatenate((gt_colored, sparse_dilate_colored, sparse_dilate_colored), axis=1)
+        pred_with_sparse_2 = np.concatenate((pred_d_im_colored, pred_rgb_im_colored, interp_im_colored), axis=1)
+        pred_with_sparse_3 = np.concatenate((pred_rgbd_photo_im_colored, pred_rgbd_im_colored, pred_gd_im_colored),
+                                            axis=1)
+        pred_with_sparse = np.concatenate((pred_with_sparse_1, pred_with_sparse_2, pred_with_sparse_3), axis=0)
         pred_with_sparse_list.append(pred_with_sparse)
 
         diff_im = np.concatenate((diff_im_rgb, diff_im_d, diff_im_rgbd, diff_im_interp), axis=0)
@@ -399,16 +435,126 @@ def colorize_depth():
 
 
 def rename_files():
-    dir_name = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/png/'
-    for f in os.listdir(dir_name):
-        if os.path.isfile(os.path.join(dir_name, f)) and ('input' in f):
-            splits = f.split('_')
-            new_name = splits[0] + '_SeaErra' + splits[2]
-            os.rename(os.path.join(dir_name, f), os.path.join(dir_name, new_name))
+    dir_name = '../data/Nachsholim/rgb_unenhanced/sampled_done'
+    count = 3
+    # for f in os.listdir(dir_name):
+    # sub_dir = os.path.join(dir_name, f)
+    # if os.path.isdir(sub_dir) and 'train' not in sub_dir:
+    for image in sorted(glob.glob(os.path.join(dir_name, "*.tif"))):
+        image_num = image.split('/')[-1].split('.')[0].split('_')[1]
+        print(image_num)
+        im = Image.open(image)
+        image_name = os.path.join(dir_name, "new", "input_l_" + image_num + ".png")
+        imageio.imsave(image_name, im)
+
+
+def compare_rgb_images(dir1, dir2):
+    cmap = plt.cm.jet
+    count_d = 0
+    count_gd = 0
+    display_d = False
+    display_gd = False
+    dir1_images = sorted(os.listdir(dir1))
+    dir2_images = sorted(os.listdir(dir2))
+    input_images = sorted(glob.glob(os.path.join('../data/Nachsholim/rgb_seaErra/test', "*.png")))
+    sparse_images = sorted(glob.glob(os.path.join('../data/Nachsholim/depth_lft/sparse/test/truncate', "*.png")))
+    gt_images = sorted(glob.glob(os.path.join('../data/Nachsholim/depth_lft/uint16/test/truncate', "*.png")))
+    rgb_d_list = []
+    rgb_gd_list = []
+    diff_d_list = []
+    diff_gd_list = []
+    o_height, o_width = 512, 800
+    transform_geometric = transforms.Compose([
+        transforms.BottomCrop((o_height, o_width))])
+    for i in range(len(dir1_images)):
+        rmse1_str = dir1_images[i].split('_')[-1].split('.')
+        rmse1 = float(rmse1_str[0] + '.' + rmse1_str[1])
+        rmse2_str = dir2_images[i].split('_')[-1].split('.')
+        rmse2 = float(rmse2_str[0] + '.' + rmse2_str[1])
+        diff = abs(rmse2 - rmse1)
+        if rmse1 < rmse2:
+            count_d += 1
+            if diff > 40 and len(rgb_d_list) < 8 and (count_d % 50) == 0:
+                display_d = True
+                output_win = np.array(Image.open(os.path.join(dir1, dir1_images[i]))).astype(np.float) / 256.
+                output_lose = np.array(Image.open(os.path.join(dir2, dir2_images[i]))).astype(np.float) / 256.
+        else:
+            count_gd += 1
+            if diff > 40 and len(rgb_gd_list) < 8 and (count_gd % 2) == 0:
+                display_gd = True
+                output_win = np.array(Image.open(os.path.join(dir2, dir2_images[i]))).astype(np.float) / 256.
+                output_lose = np.array(Image.open(os.path.join(dir1, dir1_images[i]))).astype(np.float) / 256.
+
+        if display_d or display_gd:
+            input = transform_geometric(np.array(Image.open(input_images[i])))
+            sparse = transform_geometric(np.array(Image.open(sparse_images[i]))).astype(np.float) / 256.
+            sparse_dilate = cv2.dilate(sparse, np.ones((6, 6), np.uint8), iterations=1)
+            gt = transform_geometric(np.array(Image.open(gt_images[i]))).astype(np.float) / 256.
+            row = np.concatenate((sparse_dilate, output_win, output_lose, gt), axis=1)
+            sparse_dilate_norm = (sparse_dilate - np.min(row)) / (np.max(row) - np.min(row))
+            sparse_dilate_colored = (255 * cmap(sparse_dilate_norm)[:, :, :3]).astype('uint8')
+            output_win_norm = (output_win - np.min(row)) / (np.max(row) - np.min(row))
+            output_win_colored = (255 * cmap(output_win_norm)[:, :, :3]).astype('uint8')
+            output_lose_norm = (output_lose - np.min(row)) / (np.max(row) - np.min(row))
+            output_lose_colored = (255 * cmap(output_lose_norm)[:, :, :3]).astype('uint8')
+            gt_norm = (gt - np.min(row)) / (np.max(row) - np.min(row))
+            gt_colored = (255 * cmap(gt_norm)[:, :, :3]).astype('uint8')
+            diff_im = output_win - output_lose
+            diff_im[gt == 0] = 0
+            row_colored = np.concatenate((input, sparse_dilate_colored, output_win_colored, output_lose_colored,
+                                          gt_colored), axis=1)
+            if display_d:
+                rgb_d_list.append(row_colored)
+                diff_d_list.append(diff_im)
+                display_d = False
+            else:
+                rgb_gd_list.append(row_colored)
+                diff_gd_list.append(diff_im)
+                display_gd = False
+
+    print(count_d)
+    print(count_gd)
+
+    rgb_d_tot = np.vstack(rgb_d_list)
+    plt.figure(6)
+    ax6 = plt.gca()
+    ax6.imshow(rgb_d_tot)
+    ax6.set_xticks([])
+    ax6.set_yticks([])
+    plt.show()
+
+    rgb_gd_tot = np.vstack(rgb_gd_list)
+    plt.figure(7)
+    ax7 = plt.gca()
+    ax7.imshow(rgb_gd_tot)
+    ax7.set_xticks([])
+    ax7.set_yticks([])
+    plt.show()
+
+    diff_d_tot = np.vstack(diff_d_list)
+    plt.figure(8)
+    ax8 = plt.gca()
+    im8 = ax8.imshow(diff_d_tot, cmap="jet")
+    divider = make_axes_locatable(ax8)
+    cax2 = divider.append_axes("bottom", size="7%", pad="2%")
+    plt.colorbar(im8, cax=cax2, orientation='horizontal', label='depth [m]')
+    ax8.set_xticks([])
+    ax8.set_yticks([])
+    plt.show()
+
+    diff_gd_tot = np.vstack(diff_gd_list)
+    plt.figure(9)
+    ax9 = plt.gca()
+    im9 = ax9.imshow(diff_gd_tot, cmap="jet")
+    divider = make_axes_locatable(ax9)
+    cax3 = divider.append_axes("bottom", size="7%", pad="2%")
+    plt.colorbar(im9, cax=cax3, orientation='horizontal', label='depth [m]')
+    ax9.set_xticks([])
+    ax9.set_yticks([])
+    plt.show()
 
 
 def main():
-
     # depthmaps_dir = '../data/D5/depthMaps_2020_04_16/png'
     # depthmaps_dir = '../data/SouthCarolinaCave/cave_seaerra_lft_to1500/'
     # tif_to_png(depthmaps_dir)
@@ -431,14 +577,21 @@ def main():
     # interp_dir = '../data/SouthCarolinaCave/depthMaps/interp/test/truncate'
     # calc_errors(gt_dir, interp_dir)
 
-    # rename_files()
+    rename_files()
 
-    colorize_depth()
+    # colorize_depth()
+
+    output_d = '../pretrained_models/supervised/nachsholim/test_results/mode=dense.data=nachsholim.input=d.resnet18' \
+               '.epochs35.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2020-10-06@12' \
+               '-58_test_with_rmse/val_output'
+    output_gd = '../pretrained_models/supervised/nachsholim/test_results/mode=dense.data=nachsholim.input=gd.resnet18' \
+                '.epochs35.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2020-10-06@13' \
+                '-14_seaErra_test_with_rmse/val_output'
+    # compare_rgb_images(output_d, output_gd)
 
 
 if __name__ == '__main__':
     main()
-
 
 # def make_train_val_sets(input_dir, depth_dir):
 #     input_val_dir = os.path.join(input_dir, '../val')
