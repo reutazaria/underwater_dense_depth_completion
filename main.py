@@ -258,6 +258,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             result = Result()
             if mode != 'test_prediction' and mode != 'test_completion':
                 result.evaluate(pred.data, gt.data, loss, depth_loss, smooth_loss, photometric_loss)
+                sample_i_rmse = result.rmse
             [
                 m.update(result, gpu_time, data_time, mini_batch_size)
                 for m in meters
@@ -272,7 +273,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             elif args.data == 'kitti':
                 skip = 100
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
-            logger.conditional_save_pred(mode, i, pred, epoch)
+            logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
     avg = logger.conditional_save_info(mode, average_meter, epoch)
     is_best = logger.rank_conditional_save_best(mode, avg, epoch)
     if (is_best and not (mode == "train")) or args.val == 'full':

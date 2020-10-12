@@ -177,14 +177,15 @@ class logger:
             self.save_best_txt(result, epoch)
         return is_best
 
-    def conditional_save_pred(self, mode, i, pred, epoch):
+    def conditional_save_pred(self, mode, i, pred, epoch, sample_i_rmse):
         if ("test" in mode or mode == "eval") or (mode == 'val' and self.args.save_pred):
             # save images for visualization/ testing
             image_folder = os.path.join(self.output_directory, mode + "_output")
             if not os.path.exists(image_folder):
                 os.makedirs(image_folder)
             img = torch.squeeze(pred.data.cpu()).numpy()
-            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}.png'.format(i))
+            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}'.format(i) +
+                                    '_rmse_{:.3f}.png'.format(sample_i_rmse))
             vis_utils.save_depth_as_uint16png(img, filename)
             # img_color = vis_utils.depth_colorize(img)
             # image_name_color = os.path.join(image_folder, 'colorized' + '{0:010d}.png'.format(i))
