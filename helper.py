@@ -167,11 +167,11 @@ class logger:
     def get_ranking_error(self, result):
         return getattr(result, self.args.rank_metric)
 
-    def rank_conditional_save_best(self, mode, result, epoch):
+    def rank_conditional_save_best(self, mode, result, epoch, val):
         error = self.get_ranking_error(result)
         best_error = self.get_ranking_error(self.best_result)
         is_best = error < best_error
-        if is_best and mode == "val":
+        if (is_best and mode == "val") or val == "full":
             self.old_best_result = self.best_result
             self.best_result = result
             self.save_best_txt(result, epoch)

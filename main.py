@@ -275,7 +275,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
             logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
     avg = logger.conditional_save_info(mode, average_meter, epoch)
-    is_best = logger.rank_conditional_save_best(mode, avg, epoch)
+    is_best = logger.rank_conditional_save_best(mode, avg, epoch, args.val)
     if (is_best and not (mode == "train")) or args.val == 'full':
         logger.save_img_comparison_as_best(mode, epoch)
     logger.conditional_summarize(mode, avg, is_best)
