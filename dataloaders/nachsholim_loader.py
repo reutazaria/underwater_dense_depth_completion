@@ -46,38 +46,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/sparse/train/truncate/*.png')
+            'Nachsholim/depth_lft/sparse/train/*.png')
         glob_gt = os.path.join(
             args.data_folder,
             'Nachsholim/depth_lft/uint16/train/truncate/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'Nachsholim/rgb_seaErra/train/*.png')
+            'Nachsholim/rgb_unenhanced/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse/test/truncate/*.png')
+                'Nachsholim/depth_lft/sparse/test/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/depth_lft/uint16/test/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_seaErra/test/*.png')
+                'Nachsholim/rgb_unenhanced/test/*.png')
 
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse/val/truncate/*.png')
+                'Nachsholim/depth_lft/sparse/val/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/depth_lft/uint16/val/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_seaErra/val/*.png')
+                'Nachsholim/rgb_unenhanced/val/*.png')
 
     elif split == "test_completion":
         transform = no_transform
