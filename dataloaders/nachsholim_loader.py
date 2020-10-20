@@ -46,7 +46,7 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/sparse_slam/train/truncate*.png')
+            'Nachsholim/depth_lft/sparse_slam/train/truncate/*.png')
         glob_gt = os.path.join(
             args.data_folder,
             'Nachsholim/depth_lft/uint16_slam/train/truncate/*.png')
