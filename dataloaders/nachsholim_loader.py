@@ -46,38 +46,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/sparse/train/*.png')
+            'Nachsholim/depth_lft/sparse_slam/train/truncate*.png')
         glob_gt = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/uint16/train/truncate/*.png')
+            'Nachsholim/depth_lft/uint16_slam/train/truncate/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'Nachsholim/rgb_unenhanced/train/*.png')
+            'Nachsholim/rgb_seaErra_slam/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse/test/*.png')
+                'Nachsholim/depth_lft/sparse_slam/test/truncate/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/uint16/test/truncate/*.png')
+                'Nachsholim/depth_lft/uint16_slam/test/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_unenhanced/test/*.png')
+                'Nachsholim/rgb_seaErra_slam/test/*.png')
 
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse/val/*.png')
+                'Nachsholim/depth_lft/sparse_slam/val/truncate/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/uint16/val/truncate/*.png')
+                'Nachsholim/depth_lft/uint16_slam/val/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_unenhanced/val/*.png')
+                'Nachsholim/rgb_seaErra_slam/val/*.png')
 
     elif split == "test_completion":
         transform = no_transform
