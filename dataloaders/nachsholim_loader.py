@@ -46,38 +46,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/sparse_slam/train/truncate/*.png')
+            'Nachsholim/depth_lft/sparse_manual_slam/train/*.png')
         glob_gt = os.path.join(
             args.data_folder,
             'Nachsholim/depth_lft/uint16_slam/train/truncate/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'Nachsholim/rgb_seaErra_slam/train/*.png')
+            'Nachsholim/rgb_unenhanced_slam/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse_slam/test/truncate/*.png')
+                'Nachsholim/depth_lft/sparse_manual_slam/test/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/depth_lft/uint16_slam/test/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_seaErra_slam/test/*.png')
+                'Nachsholim/rgb_unenhanced_slam/test/*.png')
 
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse_slam/val/truncate/*.png')
+                'Nachsholim/depth_lft/sparse_manual_slam/val/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/depth_lft/uint16_slam/val/truncate/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_seaErra_slam/val/*.png')
+                'Nachsholim/rgb_unenhanced_slam/val/*.png')
 
     elif split == "test_completion":
         transform = no_transform
@@ -151,7 +151,6 @@ def depth_read(filename):
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    # depth = depth_png.astype(np.float)
     # depth[depth_png == 0] = -1.
     depth = np.expand_dims(depth, -1)
     return depth
