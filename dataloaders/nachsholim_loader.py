@@ -189,12 +189,11 @@ def train_transform(rgb, sparse, target, rgb_near, args):
                                        1 + args.jitter)
         transform_rgb = transforms.Compose([
             transforms.ColorJitter(brightness, contrast, saturation, 0),
-            transform_geometric
-        ])
-        rgb = rgb
+            transform_geometric])
+        rgb = transform_geometric(rgb)
         # rgb = transform_rgb(rgb)
         if rgb_near is not None:
-            rgb_near = rgb_near
+            rgb_near = transform_geometric(rgb_near)
             # rgb_near = transform_rgb(rgb_near)
     # sparse = drop_depth_measurements(sparse, 0.9)
 
