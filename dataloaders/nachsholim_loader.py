@@ -11,6 +11,8 @@ from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
+from skimage.color import rgb2hsv
+
 iheight, iwidth = 540, 960  # raw image size
 oheight, owidth = 512, 800
 
@@ -134,6 +136,7 @@ def rgb_read(filename):
     img_file = Image.open(filename)
     # rgb_png = np.array(img_file, dtype=float) / 255.0 # scale pixels to the range [0,1]
     rgb_png = np.array(img_file, dtype='uint8')  # in the range [0,255]
+    # hsv_png = rgb2hsv(rgb_png)
     img_file.close()
     return rgb_png
 
@@ -188,9 +191,11 @@ def train_transform(rgb, sparse, target, rgb_near, args):
             transforms.ColorJitter(brightness, contrast, saturation, 0),
             transform_geometric
         ])
-        rgb = transform_rgb(rgb)
+        rgb = rgb
+        # rgb = transform_rgb(rgb)
         if rgb_near is not None:
-            rgb_near = transform_rgb(rgb_near)
+            rgb_near = rgb_near
+            # rgb_near = transform_rgb(rgb_near)
     # sparse = drop_depth_measurements(sparse, 0.9)
 
     return rgb, sparse, target, rgb_near
