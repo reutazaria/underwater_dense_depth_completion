@@ -136,9 +136,9 @@ def rgb_read(filename):
     img_file = Image.open(filename)
     # rgb_png = np.array(img_file, dtype=float) / 255.0 # scale pixels to the range [0,1]
     rgb_png = np.array(img_file, dtype='uint8')  # in the range [0,255]
-    # hsv_png = rgb2hsv(rgb_png)
+    hsv_png = rgb2hsv(rgb_png)
     img_file.close()
-    return rgb_png
+    return hsv_png
 
 
 def depth_read(filename):
