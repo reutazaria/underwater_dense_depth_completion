@@ -255,7 +255,7 @@ def save_checkpoint(state, is_best, epoch, output_directory):
 
 def get_folder_name(args):
     current_time = time.strftime('%Y-%m-%d@%H-%M')
-    if args.use_pose:
+    if args.use_pose or args.use_corr:
         prefix = "mode={}.w1={}.w2={}.".format(args.train_mode, args.w1, args.w2)
     else:
         prefix = "mode={}.".format(args.train_mode)

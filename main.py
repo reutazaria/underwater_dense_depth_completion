@@ -107,8 +107,8 @@ parser.add_argument(
     '--train-mode',
     type=str,
     default="dense",
-    choices=["dense", "sparse", "photo", "sparse+photo", "dense+photo"],
-    help='dense | sparse | photo | sparse+photo | dense+photo')
+    choices=["dense", "sparse", "photo", "sparse+photo", "dense+photo", "dense+corr"],
+    help='dense | sparse | photo | sparse+photo | dense+photo | dense+corr')
 parser.add_argument(
     '--data',
     metavar='DATA',
@@ -123,13 +123,14 @@ parser.add_argument('--cpu', action="store_true", help='run on cpu')
 
 args = parser.parse_args()
 args.use_pose = ("photo" in args.train_mode)
+args.use_corr = ("corr" in args.train_mode)
 # args.pretrained = not args.no_pretrained
 args.result = os.path.join('..', 'results')
 args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
 args.use_g = 'g' in args.input and 'rgb' not in args.input
-if args.use_pose:
-    args.w1, args.w2 = 0.1, 0.1
+if args.use_pose or args.use_corr:
+    args.w1, args.w2 = 0.5, 0.1
 else:
     args.w1, args.w2 = 0, 0
 print(args)
@@ -148,6 +149,7 @@ print("=> using '{}' for computation.".format(device))
 depth_criterion = criteria.MaskedMSELoss() if (args.criterion == 'l2') else criteria.MaskedL1Loss()
 photometric_criterion = criteria.PhotometricLoss()
 smoothness_criterion = criteria.SmoothnessLoss()
+correlation_criterion = criteria.PearsonCorrelationLoss()
 
 if args.data == 'D5':
     from dataloaders.D5_loader import load_calib, oheight, owidth
@@ -239,6 +241,9 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                                               batch_data['t_vec'], intrinsics_)
                     photometric_loss += photometric_criterion(
                         rgb_curr_, warped_, mask_) * (2 ** (scale - num_scales))
+
+            # Loss 2: pearson correlation loss
+            photometric_loss = correlation_criterion(batch_data['rgb'], pred) if args.w1 > 0 else 0
 
             # Loss 3: the depth smoothness loss
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0

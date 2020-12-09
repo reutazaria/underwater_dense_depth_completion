@@ -42,7 +42,7 @@ class PhotometricLoss(nn.Module):
         assert target.dim(
         ) == 4, "expected target dimension to be 4, but instead got {}.".format(
             target.dim())
-        assert recon.size()==target.size(), "expected recon and target to have the same size, but got {} and {} instead"\
+        assert recon.size() == target.size(), "expected recon and target to have the same size, but got {} and {} instead"\
             .format(recon.size(), target.size())
         diff = (target - recon).abs()
         diff = torch.sum(diff, 1)  # sum along the color channel
@@ -86,3 +86,20 @@ class SmoothnessLoss(nn.Module):
 
         self.loss = second_derivative(depth)
         return self.loss
+
+
+class PearsonCorrelationLoss(nn.Module):
+    def __init__(self):
+        super(PearsonCorrelationLoss, self).__init__()
+
+    def forward(self, rgb, pred):
+        # valid_mask = (target > 0).detach()
+        gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
+        gb = gb[:, None, :, :]
+        # gb = gb.unsqueeze(1)
+        vx = pred - pred.mean()
+        vy = gb - gb.mean()
+        pearson = (vx * vy).sum() / ((vx**2).sum().sqrt() * (vy**2).sum().sqrt())
+        self.loss = 1 - pearson
+        return self.loss
+
