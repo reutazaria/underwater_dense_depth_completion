@@ -92,11 +92,14 @@ class PearsonCorrelationLoss(nn.Module):
     def __init__(self):
         super(PearsonCorrelationLoss, self).__init__()
 
-    def forward(self, rgb, pred):
-        # valid_mask = (target > 0).detach()
+    def forward(self, rgb, pred, target):
+        assert pred.dim() == target.dim(), "inconsistent dimensions"
+        valid_mask = (target > 0).detach()
         gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
         gb = gb[:, None, :, :]
         # gb = gb.unsqueeze(1)
+        gb = gb[valid_mask]
+        pred = pred[valid_mask]
         vx = pred - pred.mean()
         vy = gb - gb.mean()
         pearson = (vx * vy).sum() / ((vx**2).sum().sqrt() * (vy**2).sum().sqrt())
