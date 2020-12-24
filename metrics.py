@@ -28,6 +28,7 @@ class Result(object):
         self.silog = 0  # Scale invariant logarithmic error [log(m)*100]
         self.avg_target = 0
         self.avg_pred = 0
+        self.pearson = 0
         self.loss = 0
         self.depth_loss = 0
         self.smooth_loss = 0
@@ -50,7 +51,7 @@ class Result(object):
         self.gpu_time = 0
 
     def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, lg10, \
-            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, \
+            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, pearson, \
             loss=0, depth=0, smooth=0, photometric=0):
         self.irmse = irmse
         self.imae = imae
@@ -68,6 +69,7 @@ class Result(object):
         self.silog = silog
         self.avg_target = avg_target
         self.avg_pred = avg_pred
+        self.pearson = pearson
         self.loss = loss
         self.depth_loss = depth
         self.smooth_loss = smooth
@@ -87,14 +89,19 @@ class Result(object):
 
         abs_diff = (output_mm - target_mm).abs()
 
-        self.avg_target = target_mm.abs().mean()
-        self.avg_pred = output_mm.abs().mean()
+        self.avg_target = target_mm.mean()
+        self.avg_pred = output_mm.mean()
+        self.avg_pred = output_mm.mean()
         self.mse = float((torch.pow(abs_diff, 2)).mean())
         self.rmse = math.sqrt(self.mse)
         self.mae = float(abs_diff.mean())
         self.lg10 = float((log10(output_mm) - log10(target_mm)).abs().mean())
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
+
+        vx = target_mm - target_mm.mean()
+        vy = output_mm - output_mm.mean()
+        self.pearson = (vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt())
 
         maxRatio = torch.max(output_mm / target_mm, target_mm / output_mm)
         self.delta1 = float((maxRatio < 1.25).float().mean())
@@ -145,6 +152,7 @@ class AverageMeter(object):
         self.sum_silog = 0
         self.sum_avg_target = 0
         self.sum_avg_pred = 0
+        self.sum_pearson = 0
         self.sum_loss = 0
         self.sum_depth_loss = 0
         self.sum_smooth_loss = 0
@@ -168,6 +176,7 @@ class AverageMeter(object):
         self.sum_silog += n * result.silog
         self.sum_avg_target += n * result.avg_target
         self.sum_avg_pred += n * result.avg_pred
+        self.sum_pearson += n * result.pearson
         self.sum_loss += n * result.loss
         self.sum_depth_loss += n * result.depth_loss
         self.sum_smooth_loss += n * result.smooth_loss
@@ -185,6 +194,7 @@ class AverageMeter(object):
                 self.sum_delta3 / self.count, self.sum_gpu_time / self.count,
                 self.sum_data_time / self.count, self.sum_silog / self.count,
                 self.sum_avg_target / self.count, self.sum_avg_pred / self.count,
+                self.sum_pearson / self.count,
                 self.sum_loss / self.count, self.sum_depth_loss / self.count,
                 self.sum_smooth_loss / self.count, self.sum_photometric_loss / self.count)
         return avg
