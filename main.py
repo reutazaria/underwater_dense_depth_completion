@@ -252,7 +252,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0
 
             # backprop
-            loss = depth_loss + args.w1 * photometric_loss + args.w2 * smooth_loss
+            loss = depth_loss + photometric_loss + args.w2 * smooth_loss
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
