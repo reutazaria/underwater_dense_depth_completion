@@ -130,7 +130,7 @@ args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
 args.use_g = 'g' in args.input and 'rgb' not in args.input
 if args.use_pose or args.use_corr:
-    args.w1, args.w2 = 0.1, 0.1
+    args.w1, args.w2 = 0.5, 0.1
 else:
     args.w1, args.w2 = 0, 0
 print(args)
@@ -197,6 +197,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         }
         gt = batch_data[
             'gt'] if mode != 'test_prediction' and mode != 'test_completion' else None
+        rgb = batch_data['rgb'] if args.use_rgb else None
         data_time = time.time() - start
 
         start = time.time()
@@ -243,7 +244,9 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                         rgb_curr_, warped_, mask_) * (2 ** (scale - num_scales))
 
             # Loss 2: pearson correlation loss
-            photometric_loss = correlation_criterion(batch_data['rgb'], pred, gt) if args.w1 > 0 else 0
+            gb = torch.max(batch_data['rgb'][:, 2, :, :], batch_data['rgb'][:, 1, :, :]) - batch_data['rgb'][:, 0, :, :]
+            gb = gb.unsqueeze(1)
+            photometric_loss = correlation_criterion(gb, pred, gt) if args.w1 > 0 else 0
 
             # Loss 3: the depth smoothness loss
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0
@@ -262,7 +265,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             mini_batch_size = next(iter(batch_data.values())).size(0)
             result = Result()
             if mode != 'test_prediction' and mode != 'test_completion':
-                result.evaluate(pred.data, gt.data, loss, depth_loss, smooth_loss, photometric_loss)
+                result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, photometric_loss)
                 sample_i_rmse = result.rmse
             [
                 m.update(result, gpu_time, data_time, mini_batch_size)

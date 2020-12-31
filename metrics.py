@@ -75,7 +75,7 @@ class Result(object):
         self.smooth_loss = smooth
         self.photometric_loss = photometric
 
-    def evaluate(self, output, target, loss=0, depth=0, smooth=0, photometric=0):
+    def evaluate(self, output, target, rgb, loss=0, depth=0, smooth=0, photometric=0):
         # k = 1 + round(0.9 * (target.numel() - 1))
         # result = target.view(-1).kthvalue(k).values.item()
 
@@ -89,9 +89,8 @@ class Result(object):
 
         abs_diff = (output_mm - target_mm).abs()
 
-        self.avg_target = target_mm.mean()
-        self.avg_pred = output_mm.mean()
-        self.avg_pred = output_mm.mean()
+        self.avg_target = float(target_mm.mean())
+        self.avg_pred = float(output_mm.mean())
         self.mse = float((torch.pow(abs_diff, 2)).mean())
         self.rmse = math.sqrt(self.mse)
         self.mae = float(abs_diff.mean())
@@ -99,9 +98,11 @@ class Result(object):
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
 
-        vx = target_mm - target_mm.mean()
-        vy = output_mm - output_mm.mean()
-        self.pearson = (vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt())
+        gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
+        gb = gb.unsqueeze(1)
+        vx = gb - gb.mean()
+        vy = output - output.mean()
+        self.pearson = float((vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt()))
 
         maxRatio = torch.max(output_mm / target_mm, target_mm / output_mm)
         self.delta1 = float((maxRatio < 1.25).float().mean())
