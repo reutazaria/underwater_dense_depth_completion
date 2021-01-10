@@ -11,7 +11,6 @@ from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
-from skimage.color import rgb2hsv
 
 iheight, iwidth = 540, 960  # raw image size
 oheight, owidth = 512, 800
@@ -170,11 +169,10 @@ def train_transform(rgb, sparse, target, rgb_near, args):
     do_flip = np.random.uniform(0.0, 1.0) < 0.5  # random horizontal flip
 
     transform_geometric = transforms.Compose([
-        # transforms.Resize(250.0 / iheight),
         # transforms.Rotate(angle),
         # transforms.Resize(s),
-        transforms.BottomCrop((oheight, owidth)),
-        # transforms.CenterCrop((oheight, owidth)),
+        # transforms.BottomCrop((oheight, owidth)),
+        transforms.CenterCrop((oheight, owidth)),
         transforms.HorizontalFlip(do_flip)
     ])
     if sparse is not None:
@@ -201,7 +199,8 @@ def train_transform(rgb, sparse, target, rgb_near, args):
 
 def val_transform(rgb, sparse, target, rgb_near, args):
     transform = transforms.Compose([
-        transforms.BottomCrop((oheight, owidth)),
+        transforms.CenterCrop((oheight, owidth)),
+        # transforms.BottomCrop((oheight, owidth)),
     ])
     if rgb is not None:
         rgb = transform(rgb)
