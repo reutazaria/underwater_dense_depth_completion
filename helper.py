@@ -9,7 +9,7 @@ from metrics import Result
 fieldnames = [
     'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
     'lg10', 'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
-    'gpu_time', 'avg_target', 'avg_pred', 'pearson'
+    'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
 ]
 
 
@@ -65,7 +65,8 @@ class logger:
                 'Lg10={blk_avg.lg10:.3f}({average.lg10:.3f}) '
                 'Avg_target={blk_avg.avg_target:.3f}({average.avg_target:.3f}) '
                 'Avg_pred={blk_avg.avg_pred:.3f}({average.avg_pred:.3f})\n\t'
-                'Pearson={blk_avg.pearson:.3f}({average.pearson:.3f})\n\t'
+                'Pearson={blk_avg.pearson:.3f}({average.pearson:.3f}) '
+                'Pearson_gb={blk_avg.pearson_gb:.3f}({average.pearson_gb:.3f})\n\t'
                 'Loss={blk_avg.loss:.3f}({average.loss:.3f}) '
                 'Depth_loss={blk_avg.depth_loss:.3f}({average.depth_loss:.3f}) '
                 'Smooth_loss={blk_avg.smooth_loss:.3f}({average.smooth_loss:.3f}) '
@@ -117,7 +118,8 @@ class logger:
                 'data_time': avg.data_time,
                 'avg_target': avg.avg_target,
                 'avg_pred': avg.avg_pred,
-                'pearson': avg.pearson
+                'pearson': avg.pearson,
+                'pearson_gb': avg.pearson_gb
             })
         return avg
 
@@ -129,12 +131,13 @@ class logger:
                  "irmse={:.3f}\n" + "imae={:.3f}\n" + "mse={:.3f}\n" +
                  "absrel={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
                  "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" + "avg_depth_pred={:.3f}\n"
-                 "pearson={:.3f}").format(self.args.rank_metric, epoch,
-                                                 result.rmse, result.mae, result.silog,
-                                                 result.squared_rel, result.irmse,
-                                                 result.imae, result.mse, result.absrel,
-                                                 result.lg10, result.delta1,
-                                                 result.gpu_time, result.avg_target, result.avg_pred, result.pearson))
+                 "pearson={:.3f}\n" + "pearson_gb={:.3f}").format(self.args.rank_metric, epoch,
+                                                                  result.rmse, result.mae, result.silog,
+                                                                  result.squared_rel, result.irmse,
+                                                                  result.imae, result.mse, result.absrel,
+                                                                  result.lg10, result.delta1,
+                                                                  result.gpu_time, result.avg_target, result.avg_pred,
+                                                                  result.pearson, result.pearson_gb))
 
     def save_best_txt(self, result, epoch):
         self.save_single_txt(self.best_txt, result, epoch)
@@ -212,7 +215,8 @@ class logger:
               't_GPU={time:.3f}\n'
               'AVG_target={average.avg_target:.3f}\n'
               'AVG_pred={average.avg_pred:.3f}\n'
-              'Pearson={average.pearson:.3f}\n'.format(average=avg, time=avg.gpu_time))
+              'Pearson={average.pearson:.3f}\n'
+              'Pearson_gb={average.pearson_gb:.3f}\n'.format(average=avg, time=avg.gpu_time))
         if is_best and mode == "val":
             print("New best model by %s (was %.3f)" %
                   (self.args.rank_metric,
