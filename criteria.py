@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from scipy.stats import pearsonr
 
 loss_names = ['l1', 'l2']
 
