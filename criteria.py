@@ -96,12 +96,15 @@ class PearsonCorrelationLoss(nn.Module):
         # gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
         # gb = gb[:, None, :, :]
         # gb = gb.unsqueeze(1)
-        valid_mask = (target == 0).detach()
-        pred = pred[valid_mask]
-        gb = gb[valid_mask]
-        vx = pred - pred.mean()
-        vy = gb - gb.mean()
-        pearson = (vx * vy).sum() / ((vx**2).sum().sqrt() * (vy**2).sum().sqrt())
+        if pred.max() > 3:
+            valid_mask = (target == 0).detach() & (pred > 3).detach() & (pred < 6).detach()
+            pred = pred[valid_mask]
+            gb = gb[valid_mask]
+            vx = pred - pred.mean()
+            vy = gb - gb.mean()
+            pearson = (vx * vy).sum() / ((vx**2).sum().sqrt() * (vy**2).sum().sqrt())
+        else:
+            pearson = 0
         self.loss = 1 - pearson
 
         # mean_gb = gb.mean()
