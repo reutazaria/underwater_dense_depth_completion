@@ -100,11 +100,14 @@ class Result(object):
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
 
-        gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
-        gb = gb.unsqueeze(1)
-        vx = gb - gb.mean()
-        vy = output - output.mean()
-        self.pearson_gb = float((vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt()))
+        if rgb:
+            gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
+            gb = gb.unsqueeze(1)
+            vx = gb - gb.mean()
+            vy = output - output.mean()
+            self.pearson_gb = float((vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt()))
+        else:
+            self.pearson_gb = 0
 
         vx = target_mm - target_mm.mean()
         vy = output_mm - output_mm.mean()

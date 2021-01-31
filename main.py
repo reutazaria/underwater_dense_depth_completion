@@ -112,7 +112,7 @@ parser.add_argument(
 parser.add_argument(
     '--data',
     metavar='DATA',
-    default="D5",
+    default="nachsholim",
     choices=['kitti', 'D5', 'nachsholim', 'cave'],
     help='kitti | D5 | nachsholim | cave')
 parser.add_argument('--save_pred',
@@ -244,9 +244,12 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                         rgb_curr_, warped_, mask_) * (2 ** (scale - num_scales))
 
             # Loss 2: pearson correlation loss
-            gb = torch.max(batch_data['rgb'][:, 2, :, :], batch_data['rgb'][:, 1, :, :]) - batch_data['rgb'][:, 0, :, :]
-            gb = gb.unsqueeze(1)
-            photometric_loss = correlation_criterion(gb, pred, gt) if args.w1 > 0 else 0
+            if args.use_rgb:
+                gb = torch.max(batch_data['rgb'][:, 2, :, :], batch_data['rgb'][:, 1, :, :]) - batch_data['rgb'][:, 0, :, :]
+                gb = gb.unsqueeze(1)
+                photometric_loss = correlation_criterion(gb, pred, gt) if args.w1 > 0 else 0
+            else:
+                photometric_loss = 0
 
             # Loss 3: the depth smoothness loss
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0
@@ -265,7 +268,10 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             mini_batch_size = next(iter(batch_data.values())).size(0)
             result = Result()
             if mode != 'test_prediction' and mode != 'test_completion':
-                result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, photometric_loss)
+                if rgb:
+                    result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, photometric_loss)
+                else:
+                    result.evaluate(pred.data, gt.data, None, loss, depth_loss, smooth_loss, photometric_loss)
                 sample_i_rmse = result.rmse
             [
                 m.update(result, gpu_time, data_time, mini_batch_size)
@@ -273,7 +279,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             ]
             logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
             if args.data == 'D5':
-                skip = 1
+                skip = 7
             elif args.data == 'cave':
                 skip = 70
             elif args.data == 'nachsholim':
@@ -302,6 +308,7 @@ def main():
             checkpoint = torch.load(args.evaluate, map_location=device)
             args = checkpoint['args']
             args.data_folder = args_new.data_folder
+            args.data = args_new.data
             args.val = args_new.val
             args.save_pred = args_new.save_pred
             is_eval = True
