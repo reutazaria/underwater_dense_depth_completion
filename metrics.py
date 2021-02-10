@@ -100,7 +100,7 @@ class Result(object):
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
 
-        if rgb:
+        if rgb is not None:
             gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
             gb = gb.unsqueeze(1)
             vx = gb - gb.mean()

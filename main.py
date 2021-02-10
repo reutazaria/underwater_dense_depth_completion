@@ -113,8 +113,8 @@ parser.add_argument(
     '--data',
     metavar='DATA',
     default="nachsholim",
-    choices=['kitti', 'D5', 'nachsholim', 'cave'],
-    help='kitti | D5 | nachsholim | cave')
+    choices=['kitti', 'D5', 'nachsholim', 'cave', 'squid'],
+    help='kitti | D5 | nachsholim | cave | squid')
 parser.add_argument('--save_pred',
                     action="store_true",
                     help='save prediction images')
@@ -157,6 +157,9 @@ if args.data == 'D5':
 elif args.data == 'nachsholim':
     from dataloaders.nachsholim_loader import load_calib, oheight, owidth
     from dataloaders.nachsholim_loader import NachsholimDepth as Depth
+elif args.data == 'squid':
+    from dataloaders.squid_loader import load_calib, oheight, owidth
+    from dataloaders.squid_loader import SQUIDDepth as Depth
 elif args.data == 'cave':
     from dataloaders.SC_Cave_loader import load_calib, oheight, owidth
     from dataloaders.SC_Cave_loader import CaveDepth as Depth
@@ -268,7 +271,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             mini_batch_size = next(iter(batch_data.values())).size(0)
             result = Result()
             if mode != 'test_prediction' and mode != 'test_completion':
-                if rgb:
+                if rgb is not None:
                     result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, photometric_loss)
                 else:
                     result.evaluate(pred.data, gt.data, None, loss, depth_loss, smooth_loss, photometric_loss)
@@ -283,7 +286,9 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             elif args.data == 'cave':
                 skip = 70
             elif args.data == 'nachsholim':
-                skip = 500
+                skip = 300
+            elif args.data == 'squid':
+                skip = 5
             elif args.data == 'kitti':
                 skip = 100
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
