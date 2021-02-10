@@ -14,6 +14,8 @@ import yaml
 
 iheight, iwidth = 540, 960  # raw image size
 oheight, owidth = 512, 800
+# crop_dims = [(352, 640), (256, 480), (192, 352), (416, 736)]
+# theight, twidth = crop_dims[np.random.randint(0, len(crop_dims) - 1)]
 
 
 def load_calib():
@@ -47,38 +49,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/sparse_manual_slam/train/*.png')
+            'Nachsholim/rearranged/sparse/train/points/*.png')
         glob_gt = os.path.join(
             args.data_folder,
-            'Nachsholim/depth_lft/uint16_slam/train/truncate/*.png')
+            'Nachsholim/rearranged/gt/train/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'Nachsholim/rgb_unenhanced_slam/train/*.png')
+            'Nachsholim/rearranged/rgb/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse_manual_slam/test/*.png')
+                'Nachsholim/rearranged/sparse/test/points/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/uint16_slam/test/truncate/*.png')
+                'Nachsholim/rearranged/gt/test/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_unenhanced_slam/test/*.png')
+                'Nachsholim/rearranged/rgb/test/*.png')
 
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/sparse_manual_slam/val/*.png')
+                'Nachsholim/rearranged/sparse/val/points/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'Nachsholim/depth_lft/uint16_slam/val/truncate/*.png')
+                'Nachsholim/rearranged/gt/val/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'Nachsholim/rgb_unenhanced_slam/val/*.png')
+                'Nachsholim/rearranged/rgb/val/*.png')
 
     elif split == "test_completion":
         transform = no_transform
@@ -133,8 +135,11 @@ def get_paths_and_transform(split, args):
 def rgb_read(filename):
     assert os.path.exists(filename), "file not found: {}".format(filename)
     img_file = Image.open(filename)
+    rgb_png = np.array(img_file, dtype='uint8') # in the range [0,255]
     # rgb_png = np.array(img_file, dtype=float) / 255.0 # scale pixels to the range [0,1]
-    rgb_png = np.array(img_file, dtype='uint8')  # in the range [0,255]
+    # rgb_png[:, :, 0] = np.divide(rgb_png[:, :, 0], np.max(rgb_png[:, :, 0]))
+    # rgb_png[:, :, 1] = np.divide(rgb_png[:, :, 1], np.max(rgb_png[:, :, 1]))
+    # rgb_png[:, :, 2] = np.divide(rgb_png[:, :, 2], np.max(rgb_png[:, :, 2]))
     img_file.close()
     return rgb_png
 
@@ -152,7 +157,7 @@ def depth_read(filename):
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    # depth[depth_png == 0] = -1.
+    depth[depth > 10] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
@@ -179,11 +184,9 @@ def train_transform(rgb, sparse, target, rgb_near, args):
         sparse = transform_geometric(sparse)
     target = transform_geometric(target)
     if rgb is not None:
-        brightness = np.random.uniform(max(0, 1 - args.jitter),
-                                       1 + args.jitter)
+        brightness = np.random.uniform(max(0, 1 - args.jitter), 1 + args.jitter)
         contrast = np.random.uniform(max(0, 1 - args.jitter), 1 + args.jitter)
-        saturation = np.random.uniform(max(0, 1 - args.jitter),
-                                       1 + args.jitter)
+        saturation = np.random.uniform(max(0, 1 - args.jitter), 1 + args.jitter)
         transform_rgb = transforms.Compose([
             transforms.ColorJitter(brightness, contrast, saturation, 0),
             transform_geometric])
@@ -227,8 +230,8 @@ def handle_gray(rgb, args):
     if not args.use_g:
         return rgb, None
     else:
-        # img = np.array(Image.fromarray(rgb).convert('L'))
-        img = np.maximum(rgb[:, :, 2], rgb[:, :, 1]) - rgb[:, :, 0]
+        img = np.array(Image.fromarray(rgb).convert('L'))
+        # img = np.maximum(rgb[:, :, 2], rgb[:, :, 1]) - rgb[:, :, 0]
         img = np.expand_dims(img, -1)
         if not args.use_rgb:
             rgb_ret = None
@@ -265,8 +268,7 @@ def get_rgb_near(path, args):
         path_near = get_nearby_filename(path, number + random_offset)
         if os.path.exists(path_near):
             break
-        assert count < 20, "cannot find a nearby frame in 20 trials for {}".format(
-            path_rgb_tgt)
+        assert count < 20, "cannot find a nearby frame in 20 trials for {}".format(path_rgb_tgt)
 
     return rgb_read(path_near)
 
