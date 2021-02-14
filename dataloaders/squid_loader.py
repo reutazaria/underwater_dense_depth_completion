@@ -62,13 +62,13 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SQUID/sparse_500/*.png')
+                'SQUID/sparse_500/lft/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SQUID/gt/uint16/resized/*.png')
+                'SQUID/gt/lft/uint16/resized/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'SQUID/rgb/png/resized/*.png')
+                'SQUID/rgb/lft/png/resized/*.png')
 
         elif args.val == "select":
             transform = val_transform
@@ -157,7 +157,7 @@ def depth_read(filename):
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    depth[depth > 6] = 0
+    depth[depth > 15] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
