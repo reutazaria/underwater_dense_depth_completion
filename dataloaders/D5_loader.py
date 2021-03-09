@@ -12,7 +12,7 @@ from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
 iheight, iwidth = 560, 840  # raw image size
-oheight, owidth = 448, 832
+oheight, owidth = 512, 800  # 448, 832
 
 
 def load_calib():
@@ -62,18 +62,13 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'data_depth_velodyne/val/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-            )
+                "D5/depthMaps_2020_04_16/benchmark_test_sparse/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            )
-
-            def get_rgb_paths(p):
-                ps = p.split('/')
-                pnew = '/'.join(ps[:-7] +
-                                ['data_rgb'] + ps[-6:-4] + ps[-2:-1] + ['data'] + ps[-1:])
-                return pnew
+                "D5/depthMaps_2020_04_16/benchmark_test/*.png")
+            glob_rgb = os.path.join(
+                args.data_folder,
+                "D5/Raw/benchmark_test/*.png")
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
@@ -160,6 +155,7 @@ def depth_read(filename):
     depth = depth_png.astype(np.float) / 256.
     # depth = depth_png.astype(np.float)
     # depth[depth_png == 0] = -1.
+    depth[depth > 8] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
@@ -206,7 +202,8 @@ def train_transform(rgb, sparse, target, rgb_near, args):
 
 def val_transform(rgb, sparse, target, rgb_near, args):
     transform = transforms.Compose([
-        transforms.BottomCrop((oheight, owidth)),
+        # transforms.BottomCrop((oheight, owidth)),
+        transforms.CenterCrop((oheight, owidth)),
     ])
     if rgb is not None:
         rgb = transform(rgb)
