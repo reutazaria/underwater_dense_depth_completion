@@ -36,7 +36,7 @@ def merge_into_col(ele, pred):
     # add depth images
     if 'd' in ele:
         d_im = preprocess_depth(ele['d'][0, ...])
-        d_im_dilate = cv2.dilate(d_im, np.ones((5, 5), np.uint8), iterations=1)
+        d_im_dilate = cv2.dilate(d_im, np.ones((3, 3), np.uint8), iterations=1)
         depth_im = np.concatenate((d_im_dilate, depth_im), axis=0)
     if 'gt' in ele:
         gt_im = preprocess_depth(ele['gt'][0, ...])
