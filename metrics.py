@@ -124,8 +124,7 @@ class Result(object):
         err_log = torch.log(target[valid_mask]) - torch.log(output[valid_mask])
         normalized_squared_log = (err_log**2).mean()
         log_mean = err_log.mean()
-        self.silog = math.sqrt(normalized_squared_log -
-                               log_mean * log_mean) * 100
+        self.silog = normalized_squared_log - log_mean * log_mean  # * 100
 
         # convert from meters to km
         inv_output_km = (1e-3 * output[valid_mask])**(-1)
