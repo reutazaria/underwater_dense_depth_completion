@@ -157,7 +157,7 @@ def depth_read(filename):
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    depth[depth > 4] = 0
+    depth[depth > 6] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
