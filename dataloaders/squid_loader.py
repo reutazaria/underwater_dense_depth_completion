@@ -62,13 +62,13 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SQUID/sparse_500/lft/*.png')
+                'SQUID/sparse_all/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SQUID/gt/lft/uint16/resized/*.png')
+                'SQUID/gt_all/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                'SQUID/rgb/lft/png/resized/*.png')
+                'SQUID/rgb_all/*.png')
 
         elif args.val == "select":
             transform = val_transform
