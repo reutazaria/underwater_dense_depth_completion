@@ -49,7 +49,7 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'Nachsholim/rearranged/sparse/train/points/*.png')
+            'Nachsholim/rearranged/sparse/train/*.png')
         glob_gt = os.path.join(
             args.data_folder,
             'Nachsholim/rearranged/gt/train/*.png')
@@ -62,7 +62,7 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/rearranged/sparse/test/points/*.png')
+                'Nachsholim/rearranged/sparse/test/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/rearranged/gt/test/*.png')
@@ -74,7 +74,7 @@ def get_paths_and_transform(split, args):
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'Nachsholim/rearranged/sparse/val/points/*.png')
+                'Nachsholim/rearranged/sparse/val/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
                 'Nachsholim/rearranged/gt/val/*.png')
@@ -157,7 +157,7 @@ def depth_read(filename):
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    depth[depth > 15] = 0
+    depth[depth > 6] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
@@ -190,11 +190,11 @@ def train_transform(rgb, sparse, target, rgb_near, args):
         transform_rgb = transforms.Compose([
             transforms.ColorJitter(brightness, contrast, saturation, 0),
             transform_geometric])
-        rgb = transform_geometric(rgb)
-        # rgb = transform_rgb(rgb)
+        # rgb = transform_geometric(rgb)
+        rgb = transform_rgb(rgb)
         if rgb_near is not None:
-            rgb_near = transform_geometric(rgb_near)
-            # rgb_near = transform_rgb(rgb_near)
+            # rgb_near = transform_geometric(rgb_near)
+            rgb_near = transform_rgb(rgb_near)
     # sparse = drop_depth_measurements(sparse, 0.9)
 
     return rgb, sparse, target, rgb_near
