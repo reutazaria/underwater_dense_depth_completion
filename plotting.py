@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-model_dir = '../results/mode=dense.data=nachsholim.input=rgbd.resnet18.epochs30.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-02-09@15-42'
+model_dir = '../results/mode=dense.data=nachsholim.input=rgbd.resnet18.epochs30.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-03-09@15-08'
 train_filename = os.path.join(model_dir, 'train.csv')
 train_data = pd.read_csv(train_filename)
 epochs = train_data['epoch'].values
@@ -17,7 +17,7 @@ epoch_num = len(epochs)
 val_filename = os.path.join(model_dir, 'val.csv')
 val_data = pd.read_csv(val_filename)
 val_error = val_data['rmse'].values
-val_pearson = val_data['pearson'].values
+val_rel = val_data['absrel'].values
 
 fig0 = plt.figure(1)
 data_set = model_dir.split('data=')[1].split('.')[0]
@@ -73,16 +73,16 @@ print('Best validation error is: {:.3f}, in epoch {:d}/{:d}'.format(val_error_tr
                                                                     epoch_num))
 
 plt.subplot(133)
-val_pearson_trim = val_pearson[0:epoch_num]
-plt.plot(epochs, val_pearson_trim, label='Pearson')
-max_ind = np.argmax(val_pearson_trim)
-plt.plot(epochs[max_ind], val_pearson_trim[max_ind], 'xk')
-plt.annotate("({:d},{:.3f})".format(epochs[max_ind], val_pearson_trim[max_ind]),
-             (epochs[max_ind], val_pearson_trim[max_ind]), ha="center", va="bottom", bbox=dict(facecolor='grey', alpha=0.5))
+val_rel_trim = val_rel[0:epoch_num] * 100
+plt.plot(epochs, val_rel_trim, label='REL')
+min_ind = np.argmin(val_rel_trim)
+plt.plot(epochs[min_ind], val_rel_trim[min_ind], 'xk')
+plt.annotate("({:d},{:.3f})".format(epochs[min_ind], val_rel_trim[min_ind]),
+             (epochs[min_ind], val_rel_trim[min_ind]), ha="center", va="bottom", bbox=dict(facecolor='grey', alpha=0.5))
 plt.legend(loc='lower right')
 plt.xlabel('Epoch')
-plt.ylabel('Pearson')
-plt.title(r'Validation $\rho$')
+plt.ylabel('REL')
+plt.title(r'Validation REL')
 plt.grid(True)
 
 fig0.set_size_inches(20, 5)

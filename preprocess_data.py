@@ -259,7 +259,7 @@ def sparse_to_interp(sparse_dir):
         cv2.imwrite(image_name_interp, interpolated_im_u)
 
 
-def calc_errors(gt_dir, interp_dir, output_dir):
+def calc_errors(gt_dir, interp_dir, output_dir, max_depth):
     RMSE = 0
     MAE = 0
     Avg_pred = 0
@@ -276,6 +276,7 @@ def calc_errors(gt_dir, interp_dir, output_dir):
         depth_gt = np.array(Image.open(os.path.join(gt_dir, gt_images[i])))
         depth_gt = depth_gt.astype(np.float) / 256.
         depth_gt = transform_geometric(depth_gt)
+        depth_gt[depth_gt > max_depth] = 0
         gt_im = depth_gt
         depth_gt = np.expand_dims(depth_gt, -1)
         depth_interp = np.array(Image.open(os.path.join(interp_dir, interp_images[i])))
@@ -1150,8 +1151,9 @@ def main():
 
     gt_dir = '../data/Nachsholim/rearranged/gt/test'
     interp_dir = '../data/Nachsholim/rearranged/sparse/test/interp_6m'
-    output_dir = '../pretrained_models/supervised/nachsholim_manual_slam/rearranged/test/mode=dense.data=nachsholim.input=rgbd.resnet18.epochs30.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-02-11@15-18_15m/val_output'
-    calc_errors(gt_dir, interp_dir, interp_dir)
+    output_dir = '../pretrained_models/supervised/nachsholim_manual_slam/rearranged/test/mode=dense.data=nachsholim.input=rgbd.resnet18.epochs30.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-03-10@11-39/val_output'
+    max_depth = 6
+    calc_errors(gt_dir, interp_dir, output_dir, max_depth)
 
     # rename_files()
 
