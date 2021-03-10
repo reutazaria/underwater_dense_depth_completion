@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-loss_names = ['l1', 'l2']
+loss_names = ['l1', 'l2', 'REL']
 
 
 class MaskedMSELoss(nn.Module):
@@ -27,6 +27,20 @@ class MaskedL1Loss(nn.Module):
         diff = target - pred
         diff = diff[valid_mask]
         self.loss = diff.abs().mean()
+        return self.loss
+
+
+class MaskedRELLoss(nn.Module):
+    def __init__(self):
+        super(MaskedRELLoss, self).__init__()
+
+    def forward(self, pred, target, weight=None):
+        assert pred.dim() == target.dim(), "inconsistent dimensions"
+        valid_mask = (target > 0).detach()
+        diff = target - pred
+        diff = diff[valid_mask]
+        rel = diff.abs() / target[valid_mask]
+        self.loss = rel.mean()
         return self.loss
 
 

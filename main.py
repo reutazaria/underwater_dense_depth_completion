@@ -146,7 +146,7 @@ else:
 print("=> using '{}' for computation.".format(device))
 
 # define loss functions
-depth_criterion = criteria.MaskedMSELoss() if (args.criterion == 'l2') else criteria.MaskedL1Loss()
+depth_criterion = criteria.MaskedMSELoss() if (args.criterion == 'l2') else criteria.MaskedRELLoss()
 photometric_criterion = criteria.PhotometricLoss()
 smoothness_criterion = criteria.SmoothnessLoss()
 correlation_criterion = criteria.PearsonCorrelationLoss()
