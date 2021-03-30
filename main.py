@@ -59,10 +59,10 @@ parser.add_argument('--weight-decay',
                     help='weight decay (default: 0)')
 parser.add_argument('--print-freq',
                     '-p',
-                    default=10,
+                    default=50,
                     type=int,
                     metavar='N',
-                    help='print frequency (default: 10)')
+                    help='print frequency (default: 50)')
 parser.add_argument('--resume',
                     default='',
                     type=str,
@@ -316,6 +316,7 @@ def main():
             args.data = args_new.data
             args.val = args_new.val
             args.save_pred = args_new.save_pred
+            args.print_freq = args_new.print_freq
             is_eval = True
             print("Completed.")
         else:
