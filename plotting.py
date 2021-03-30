@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-model_dir = '../results/mode=dense.data=nachsholim.input=rgbd.resnet18.epochs30.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-03-09@15-08'
+model_dir = '../results/mode=dense.data=nachsholim.input=gd.resnet18.epochs20.criterion=l2.lr=0.0001.bs=2.wd=0.pretrained=True.jitter=0.1.time=2021-03-29@13-16'
 train_filename = os.path.join(model_dir, 'train.csv')
 train_data = pd.read_csv(train_filename)
 epochs = train_data['epoch'].values
@@ -79,9 +79,9 @@ min_ind = np.argmin(val_rel_trim)
 plt.plot(epochs[min_ind], val_rel_trim[min_ind], 'xk')
 plt.annotate("({:d},{:.3f})".format(epochs[min_ind], val_rel_trim[min_ind]),
              (epochs[min_ind], val_rel_trim[min_ind]), ha="center", va="bottom", bbox=dict(facecolor='grey', alpha=0.5))
-plt.legend(loc='lower right')
+plt.legend(loc='upper right')
 plt.xlabel('Epoch')
-plt.ylabel('REL')
+plt.ylabel('REL [%]')
 plt.title(r'Validation REL')
 plt.grid(True)
 
