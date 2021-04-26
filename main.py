@@ -205,6 +205,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
         start = time.time()
         pred = model(batch_data)
+        # pred, log_var = model(batch_data)
         loss, depth_loss, photometric_loss, smooth_loss, mask = 0, 0, 0, 0, None
         if mode == 'train':
             # Loss 1: the direct depth supervision from ground truth label
@@ -214,6 +215,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                 mask = (batch_data['d'] < 1e-3).float()
             elif 'dense' in args.train_mode:
                 depth_loss = depth_criterion(pred, gt)
+                # depth_loss = depth_criterion(pred, log_var, gt)
                 mask = (gt < 1e-3).float()
 
             # Loss 2: the self-supervised photometric loss
@@ -292,7 +294,9 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             elif args.data == 'kitti':
                 skip = 100
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, epoch, skip)
+            # logger.conditional_save_img_comparison(mode, i, batch_data, pred, log_var, epoch, skip)
             logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
+            # logger.conditional_save_var(mode, i, log_var, epoch)
     avg = logger.conditional_save_info(mode, average_meter, epoch)
     is_best = logger.rank_conditional_save_best(mode, avg, epoch, args.val)
     if (is_best and not (mode == "train")) or args.val == 'full':

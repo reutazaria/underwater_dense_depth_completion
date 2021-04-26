@@ -11,9 +11,12 @@ class MaskedMSELoss(nn.Module):
     def forward(self, pred, target):
         assert pred.dim() == target.dim(), "inconsistent dimensions"
         valid_mask = (target > 0).detach()
-        diff = target - pred
+        diff = pred - target
         diff = diff[valid_mask]
-        self.loss = (diff**2).mean()
+        # log_var = log_var[valid_mask]
+        loss = diff ** 2
+        self.loss = loss.mean()
+        # self.loss = ((-log_var).exp() * diff ** 2 + log_var).mean()
         return self.loss
 
 
@@ -39,7 +42,9 @@ class MaskedRELLoss(nn.Module):
         valid_mask = (target > 0).detach()
         diff = target - pred
         diff = diff[valid_mask]
-        rel = diff.abs() / target[valid_mask]
+        # log_var = log_var[valid_mask]
+        rel = diff.abs() / target[valid_mask].exp()
+        # self.loss = ((-log_var).exp() * rel + log_var).mean()
         self.loss = rel.mean()
         return self.loss
 
@@ -56,7 +61,7 @@ class PhotometricLoss(nn.Module):
         assert target.dim(
         ) == 4, "expected target dimension to be 4, but instead got {}.".format(
             target.dim())
-        assert recon.size() == target.size(), "expected recon and target to have the same size, but got {} and {} instead"\
+        assert recon.size() == target.size(), "expected recon and target to have the same size, but got {} and {} instead" \
             .format(recon.size(), target.size())
         diff = (target - recon).abs()
         diff = torch.sum(diff, 1)  # sum along the color channel
@@ -92,9 +97,9 @@ class SmoothnessLoss(nn.Module):
             ) == 4, "expected 4-dimensional data, but instead got {}".format(
                 x.dim())
             horizontal = 2 * x[:, :, 1:-1, 1:-1] - x[:, :, 1:-1, :
-                                                     -2] - x[:, :, 1:-1, 2:]
+                                                                 -2] - x[:, :, 1:-1, 2:]
             vertical = 2 * x[:, :, 1:-1, 1:-1] - x[:, :, :-2, 1:
-                                                   -1] - x[:, :, 2:, 1:-1]
+                                                              -1] - x[:, :, 2:, 1:-1]
             der_2nd = horizontal.abs() + vertical.abs()
             return der_2nd.mean()
 
@@ -112,7 +117,6 @@ class PearsonCorrelationLoss(nn.Module):
         gb = gb[valid_mask]
         vx = pred - pred.mean()
         vy = gb - gb.mean()
-        pearson = (vx * vy).sum() / ((vx**2).sum().sqrt() * (vy**2).sum().sqrt())
+        pearson = (vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt())
         self.loss = 1 - pearson
         return self.loss
-

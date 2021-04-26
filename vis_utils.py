@@ -16,7 +16,13 @@ def depth_colorize(depth):
     return depth_color.astype('uint8')
 
 
-def merge_into_col(ele, pred):
+def var_colorize(var):
+    var = (var - np.min(var)) / (np.max(var) - np.min(var))
+    var_color = 255 * plt.cm.gray(var)[:, :, :3]  # H, W, C
+    return var_color.astype('uint8')
+
+
+def merge_into_col(ele, pred):  #, log_var):
     def preprocess_depth(x):
         y = np.squeeze(x.data.cpu().numpy())
         return y
@@ -45,6 +51,8 @@ def merge_into_col(ele, pred):
         # diff_im[gt_im == 0] = 0
         # depth_im = np.concatenate((depth_im, diff_im), axis=0)
     img_list.append(depth_colorize(depth_im))
+    # uncertainty_map = preprocess_depth(log_var[0, ...])
+    # img_list.append(var_colorize(uncertainty_map))
 
     # if 'd' in ele:
     #     img_list.append(preprocess_depth(ele['d'][0, ...]))
@@ -65,6 +73,11 @@ def add_col(img_merge, row):
 
 def save_image(img_merge, filename):
     image_to_write = cv2.cvtColor(img_merge, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(filename, image_to_write)
+
+
+def save_var_image(img, filename):
+    image_to_write = np.exp(img).astype(np.float)
     cv2.imwrite(filename, image_to_write)
 
 

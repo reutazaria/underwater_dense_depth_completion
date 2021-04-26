@@ -194,10 +194,29 @@ class DepthCompletionNet(nn.Module):
 
         y = self.convtf(y)
 
+        # # decoder
+        # # output sigma
+        # log_var = torch.cat((convt5, conv5), 1)
+        #
+        # convt4 = self.convt4(log_var)
+        # log_var = torch.cat((convt4, conv4), 1)
+        #
+        # convt3 = self.convt3(log_var)
+        # log_var = torch.cat((convt3, conv3), 1)
+        #
+        # convt2 = self.convt2(log_var)
+        # log_var = torch.cat((convt2, conv2), 1)
+        #
+        # convt1 = self.convt1(log_var)
+        # log_var = torch.cat((convt1, conv1), 1)
+        #
+        # log_var = self.convtf(log_var)
+
         if self.training:
             return 100 * y
+            # return 100 * y, log_var
         else:
-            min_distance = 0.9
-            return F.relu(
-                100 * y - min_distance
-            ) + min_distance  # the minimum range of Velodyne is around 3 feet ~= 0.9m
+            min_distance = 0.5
+            return F.relu(100 * y - min_distance) + min_distance
+            # return F.relu(100 * y - min_distance) + min_distance, log_var
+            # the miniumm range of Velodyne is around 3 feet ~= 0.9m

@@ -152,12 +152,15 @@ class logger:
                 return self.output_directory + '/comparison_' + str(epoch) + '.png'
 
     def conditional_save_img_comparison(self, mode, i, ele, pred, epoch, skip=100):
+    # def conditional_save_img_comparison(self, mode, i, ele, pred, log_var, epoch, skip=100):
         # save 8 images for visualization
         if mode == 'val' or mode == 'eval':
             if i == 0:
                 self.img_merge = vis_utils.merge_into_col(ele, pred)
+                # self.img_merge = vis_utils.merge_into_col(ele, pred, log_var)
             elif i % skip == 0 and i < 4 * skip:
                 row = vis_utils.merge_into_col(ele, pred)
+                # row = vis_utils.merge_into_col(ele, pred, log_var)
                 self.img_merge = vis_utils.add_col(self.img_merge, row)
             elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
@@ -195,6 +198,16 @@ class logger:
             # img_color = vis_utils.depth_colorize(img)
             # image_name_color = os.path.join(image_folder, 'colorized' + '{0:010d}.png'.format(i))
             # vis_utils.save_image(img_color, image_name_color)
+
+    def conditional_save_var(self, mode, i, var, epoch):
+        if ("test" in mode or mode == "eval") or (mode == 'val' and self.args.save_pred):
+            # save images for visualization/ testing
+            image_folder = os.path.join(self.output_directory, mode + "_output_var")
+            if not os.path.exists(image_folder):
+                os.makedirs(image_folder)
+            img = torch.squeeze(var.data.cpu()).numpy()
+            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}.png'.format(i))
+            vis_utils.save_var_image(img, filename)
 
     def conditional_summarize(self, mode, avg, is_best):
         print("\n*\nSummary of ", mode, "round")
