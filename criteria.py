@@ -49,6 +49,20 @@ class MaskedRELLoss(nn.Module):
         return self.loss
 
 
+class VarianceLoss(nn.Module):
+    def __init__(self):
+        super(VarianceLoss, self).__init__()
+
+    def forward(self, pred, log_var, target, weight=None):
+        assert pred.dim() == target.dim(), "inconsistent dimensions"
+        valid_mask = (target > 0).detach()
+        diff = target - pred
+        diff = diff[valid_mask]
+        log_var = log_var[valid_mask]
+        self.loss = ((-log_var).exp() * diff ** 2 + log_var).mean()
+        return self.loss
+
+
 class PhotometricLoss(nn.Module):
     def __init__(self):
         super(PhotometricLoss, self).__init__()
@@ -111,10 +125,10 @@ class PearsonCorrelationLoss(nn.Module):
     def __init__(self):
         super(PearsonCorrelationLoss, self).__init__()
 
-    def forward(self, gb, pred, target):
-        valid_mask = (target == 0).detach()
-        pred = pred[valid_mask]
-        gb = gb[valid_mask]
+    def forward(self, gb, pred):
+        # valid_mask = (target == 0).detach()
+        # pred = pred[valid_mask]
+        # gb = gb[valid_mask]
         vx = pred - pred.mean()
         vy = gb - gb.mean()
         pearson = (vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt())
