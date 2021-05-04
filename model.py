@@ -156,7 +156,7 @@ class DepthCompletionNet(nn.Module):
                                    bn=False,
                                    relu=False)
 
-    def forward(self, x):
+    def forward(self, x, args):
         # first layer
         if 'd' in self.modality:
             conv1_d = self.conv1_d(x['d'])
@@ -194,29 +194,36 @@ class DepthCompletionNet(nn.Module):
 
         y = self.convtf(y)
 
-        # # decoder
-        # # output sigma
-        # log_var = torch.cat((convt5, conv5), 1)
-        #
-        # convt4 = self.convt4(log_var)
-        # log_var = torch.cat((convt4, conv4), 1)
-        #
-        # convt3 = self.convt3(log_var)
-        # log_var = torch.cat((convt3, conv3), 1)
-        #
-        # convt2 = self.convt2(log_var)
-        # log_var = torch.cat((convt2, conv2), 1)
-        #
-        # convt1 = self.convt1(log_var)
-        # log_var = torch.cat((convt1, conv1), 1)
-        #
-        # log_var = self.convtf(log_var)
+        # decoder
+        # output sigma
+        if args.calc_var:
+            log_var = torch.cat((convt5, conv5), 1)
+
+            convt4 = self.convt4(log_var)
+            log_var = torch.cat((convt4, conv4), 1)
+
+            convt3 = self.convt3(log_var)
+            log_var = torch.cat((convt3, conv3), 1)
+
+            convt2 = self.convt2(log_var)
+            log_var = torch.cat((convt2, conv2), 1)
+
+            convt1 = self.convt1(log_var)
+            log_var = torch.cat((convt1, conv1), 1)
+
+            log_var = self.convtf(log_var)
 
         if self.training:
-            return 100 * y
-            # return 100 * y, log_var
+            # return 100 * y
+            if args.calc_var:
+                return 100 * y, log_var
+            else:
+                return 100 * y
         else:
             min_distance = 0.5
-            return F.relu(100 * y - min_distance) + min_distance
-            # return F.relu(100 * y - min_distance) + min_distance, log_var
+            # return F.relu(100 * y - min_distance) + min_distance
+            if args.calc_var:
+                return F.relu(100 * y - min_distance) + min_distance, log_var
+            else:
+                return F.relu(100 * y - min_distance) + min_distance
             # the miniumm range of Velodyne is around 3 feet ~= 0.9m
