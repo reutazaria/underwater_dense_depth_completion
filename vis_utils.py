@@ -22,7 +22,7 @@ def var_colorize(var):
     return var_color.astype('uint8')
 
 
-def merge_into_col(ele, pred):  #, log_var):
+def merge_into_col(ele, pred, log_var):
     def preprocess_depth(x):
         y = np.squeeze(x.data.cpu().numpy())
         return y
@@ -40,19 +40,22 @@ def merge_into_col(ele, pred):  #, log_var):
         img_list.append(g)
     depth_im = preprocess_depth(pred[0, ...])
     # add depth images
+    if 'gt' in ele:
+        gt_im = preprocess_depth(ele['gt'][0, ...])
+        out_gt = preprocess_depth(pred[0, ...])
+        out_gt[gt_im == 0] = 0
+        depth_im = np.concatenate((depth_im, out_gt, gt_im), axis=0)
+        # diff_im = gt_im - preprocess_depth(pred[0, ...])
+        # diff_im[gt_im == 0] = 0
+        # depth_im = np.concatenate((depth_im, diff_im), axis=0)
     if 'd' in ele:
         d_im = preprocess_depth(ele['d'][0, ...])
         d_im_dilate = cv2.dilate(d_im, np.ones((3, 3), np.uint8), iterations=1)
         depth_im = np.concatenate((d_im_dilate, depth_im), axis=0)
-    if 'gt' in ele:
-        gt_im = preprocess_depth(ele['gt'][0, ...])
-        depth_im = np.concatenate((depth_im, gt_im), axis=0)
-        # diff_im = gt_im - preprocess_depth(pred[0, ...])
-        # diff_im[gt_im == 0] = 0
-        # depth_im = np.concatenate((depth_im, diff_im), axis=0)
     img_list.append(depth_colorize(depth_im))
-    # uncertainty_map = preprocess_depth(log_var[0, ...])
-    # img_list.append(var_colorize(uncertainty_map))
+    if log_var:
+        uncertainty_map = preprocess_depth(log_var[0, ...])
+        img_list.append(var_colorize(uncertainty_map))
 
     # if 'd' in ele:
     #     img_list.append(preprocess_depth(ele['d'][0, ...]))
