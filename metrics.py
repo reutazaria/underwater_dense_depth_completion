@@ -19,6 +19,7 @@ class Result(object):
         self.mae = 0
         self.absrel = 0
         self.squared_rel = 0
+        self.rel_exp = 0
         self.lg10 = 0
         self.delta1 = 0
         self.delta2 = 0
@@ -43,6 +44,7 @@ class Result(object):
         self.mae = np.inf
         self.absrel = np.inf
         self.squared_rel = np.inf
+        self.rel_exp = np.inf
         self.lg10 = np.inf
         self.silog = np.inf
         self.delta1 = 0
@@ -51,7 +53,7 @@ class Result(object):
         self.data_time = 0
         self.gpu_time = 0
 
-    def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, lg10, \
+    def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, rel_exp, lg10, \
             delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, pearson, pearson_gb, \
             loss=0, depth=0, smooth=0, photometric=0):
         self.irmse = irmse
@@ -61,6 +63,7 @@ class Result(object):
         self.mae = mae
         self.absrel = absrel
         self.squared_rel = squared_rel
+        self.rel_exp = rel_exp
         self.lg10 = lg10
         self.delta1 = delta1
         self.delta2 = delta2
@@ -99,6 +102,7 @@ class Result(object):
         self.lg10 = float((log10(output_mm) - log10(target_mm)).abs().mean())
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
+        self.rel_exp = 1e3*float(((output[valid_mask] - target[valid_mask]).abs() / target[valid_mask].exp()).mean())
 
         if rgb is not None:
             gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
@@ -152,6 +156,7 @@ class AverageMeter(object):
         self.sum_mae = 0
         self.sum_absrel = 0
         self.sum_squared_rel = 0
+        self.sum_rel_exp = 0
         self.sum_lg10 = 0
         self.sum_delta1 = 0
         self.sum_delta2 = 0
@@ -177,6 +182,7 @@ class AverageMeter(object):
         self.sum_mae += n * result.mae
         self.sum_absrel += n * result.absrel
         self.sum_squared_rel += n * result.squared_rel
+        self.sum_rel_exp += n * result.rel_exp
         self.sum_lg10 += n * result.lg10
         self.sum_delta1 += n * result.delta1
         self.sum_delta2 += n * result.delta2
@@ -200,7 +206,7 @@ class AverageMeter(object):
                 self.sum_irmse / self.count, self.sum_imae / self.count,
                 self.sum_mse / self.count, self.sum_rmse / self.count,
                 self.sum_mae / self.count, self.sum_absrel / self.count,
-                self.sum_squared_rel / self.count, self.sum_lg10 / self.count,
+                self.sum_squared_rel / self.count, self.sum_rel_exp / self.count, self.sum_lg10 / self.count,
                 self.sum_delta1 / self.count, self.sum_delta2 / self.count,
                 self.sum_delta3 / self.count, self.sum_gpu_time / self.count,
                 self.sum_data_time / self.count, self.sum_silog / self.count,

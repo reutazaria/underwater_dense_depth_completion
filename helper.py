@@ -8,7 +8,7 @@ from metrics import Result
 
 fieldnames = [
     'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
-    'lg10', 'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
+    'rel_exp', 'lg10', 'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
     'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
 ]
 
@@ -62,6 +62,7 @@ class logger:
                 'squared_rel={blk_avg.squared_rel:.2f}({average.squared_rel:.2f}) '
                 'Delta1={blk_avg.delta1:.3f}({average.delta1:.3f}) '
                 'REL={blk_avg.absrel:.3f}({average.absrel:.3f})\n\t'
+                'rel_exp={blk_avg.rel_exp:.3f}({average.rel_exp:.3f}) '
                 'Lg10={blk_avg.lg10:.3f}({average.lg10:.3f}) '
                 'Avg_target={blk_avg.avg_target:.3f}({average.avg_target:.3f}) '
                 'Avg_pred={blk_avg.avg_pred:.3f}({average.avg_pred:.3f})\n\t'
@@ -110,6 +111,7 @@ class logger:
                 'silog': avg.silog,
                 'squared_rel': avg.squared_rel,
                 'absrel': avg.absrel,
+                'rel_exp': avg.rel_exp,
                 'lg10': avg.lg10,
                 'delta1': avg.delta1,
                 'delta2': avg.delta2,
@@ -129,13 +131,13 @@ class logger:
                 ("rank_metric={}\n" + "epoch={}\n" + "rmse={:.3f}\n" +
                  "mae={:.3f}\n" + "silog={:.3f}\n" + "squared_rel={:.3f}\n" +
                  "irmse={:.3f}\n" + "imae={:.3f}\n" + "mse={:.3f}\n" +
-                 "absrel={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
+                 "absrel={:.3f}\n" + "rel_exp={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
                  "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" + "avg_depth_pred={:.3f}\n"
                  "pearson={:.3f}\n" + "pearson_gb={:.3f}").format(self.args.rank_metric, epoch,
                                                                   result.rmse, result.mae, result.silog,
                                                                   result.squared_rel, result.irmse,
                                                                   result.imae, result.mse, result.absrel,
-                                                                  result.lg10, result.delta1,
+                                                                  result.rel_exp, result.lg10, result.delta1,
                                                                   result.gpu_time, result.avg_target, result.avg_pred,
                                                                   result.pearson, result.pearson_gb))
 
@@ -151,16 +153,15 @@ class logger:
             else:
                 return self.output_directory + '/comparison_' + str(epoch) + '.png'
 
-    def conditional_save_img_comparison(self, mode, i, ele, pred, epoch, skip=100):
-    # def conditional_save_img_comparison(self, mode, i, ele, pred, log_var, epoch, skip=100):
+    def conditional_save_img_comparison(self, mode, i, ele, pred, log_var, epoch, skip=100):
         # save 8 images for visualization
         if mode == 'val' or mode == 'eval':
             if i == 0:
-                self.img_merge = vis_utils.merge_into_col(ele, pred)
-                # self.img_merge = vis_utils.merge_into_col(ele, pred, log_var)
+                # self.img_merge = vis_utils.merge_into_col(ele, pred)
+                self.img_merge = vis_utils.merge_into_col(ele, pred, log_var)
             elif i % skip == 0 and i < 4 * skip:
-                row = vis_utils.merge_into_col(ele, pred)
-                # row = vis_utils.merge_into_col(ele, pred, log_var)
+                # row = vis_utils.merge_into_col(ele, pred)
+                row = vis_utils.merge_into_col(ele, pred, log_var)
                 self.img_merge = vis_utils.add_col(self.img_merge, row)
             elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
@@ -224,6 +225,7 @@ class logger:
               'silog={average.silog}\n'
               'Delta1={average.delta1:.3f}\n'
               'REL={average.absrel:.3f}\n'
+              'rel_exp={average.rel_exp:.3f}\n'
               'Lg10={average.lg10:.3f}\n'
               't_GPU={time:.3f}\n'
               'AVG_target={average.avg_target:.3f}\n'
