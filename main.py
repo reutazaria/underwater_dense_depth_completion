@@ -201,11 +201,11 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         data_time = time.time() - start
 
         start = time.time()
-        # pred = model(batch_data)
-        if args.calc_var:
-            pred, log_var = model(batch_data, args)
-        else:
-            pred = model(batch_data, args)
+        pred = model(batch_data)
+        # if args.calc_var:
+        #     pred, log_var = model(batch_data, args)
+        # else:
+        #     pred = model(batch_data, args)
         gpu_time = time.time() - start
 
         loss, depth_loss, self_loss, smooth_loss, var_loss, mask = 0, 0, 0, 0, 0, None
@@ -277,28 +277,26 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
                     result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, self_loss)
                 else:
                     result.evaluate(pred.data, gt.data, None, loss, depth_loss, smooth_loss, self_loss)
-                sample_i_rmse = result.rmse
-            [
-                m.update(result, gpu_time, data_time, mini_batch_size)
-                for m in meters
-            ]
-            logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
-            if args.data == 'D5':
-                skip = 7
-            elif args.data == 'cave':
-                skip = 70
-            elif args.data == 'nachsholim':
-                skip = 300
-            elif args.data == 'squid':
-                skip = 5
-            elif args.data == 'kitti':
-                skip = 100
-            logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
-            if args.calc_var:
-                logger.conditional_save_img_comparison_var(mode, i, batch_data, pred, log_var, epoch, skip)
-                logger.conditional_save_var(mode, i, log_var, epoch)
-            else:
-                logger.conditional_save_img_comparison(mode, i, batch_data, pred, False, epoch, skip)
+                # sample_i_rmse = result.rmse
+            [m.update(result, gpu_time, data_time, mini_batch_size) for m in meters]
+
+            # logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
+            # if args.data == 'D5':
+            #     skip = 7
+            # elif args.data == 'cave':
+            #     skip = 70
+            # elif args.data == 'nachsholim':
+            #     skip = 300
+            # elif args.data == 'squid':
+            #     skip = 5
+            # elif args.data == 'kitti':
+            #     skip = 100
+            # logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
+            # if args.calc_var:
+            #     logger.conditional_save_img_comparison_var(mode, i, batch_data, pred, log_var, epoch, skip)
+            #     logger.conditional_save_var(mode, i, log_var, epoch)
+            # else:
+            #     logger.conditional_save_img_comparison(mode, i, batch_data, pred, False, epoch, skip)
 
     end_event.record()
     torch.cuda.synchronize()  # Wait for the events to be recorded!
