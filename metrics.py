@@ -20,6 +20,11 @@ class Result(object):
         self.absrel = 0
         self.squared_rel = 0
         self.rel_exp = 0
+        self.diff_thresh = 0
+        self.rmse_3 = 0
+        self.diff_3 = 0
+        self.rmse_6 = 0
+        self.diff_6 = 0
         self.lg10 = 0
         self.delta1 = 0
         self.delta2 = 0
@@ -45,6 +50,9 @@ class Result(object):
         self.absrel = np.inf
         self.squared_rel = np.inf
         self.rel_exp = np.inf
+        self.diff_thresh = np.inf
+        self.diff_3 = np.inf
+        self.diff_6 = np.inf
         self.lg10 = np.inf
         self.silog = np.inf
         self.delta1 = 0
@@ -53,9 +61,9 @@ class Result(object):
         self.data_time = 0
         self.gpu_time = 0
 
-    def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, rel_exp, lg10, \
-            delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, pearson, pearson_gb, \
-            loss=0, depth=0, smooth=0, photometric=0):
+    def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, rel_exp, diff_thresh, rmse_3, diff_3, rmse_6, \
+               diff_6, lg10, delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred, pearson, \
+               pearson_gb, loss=0, depth=0, smooth=0, photometric=0):
         self.irmse = irmse
         self.imae = imae
         self.mse = mse
@@ -64,6 +72,11 @@ class Result(object):
         self.absrel = absrel
         self.squared_rel = squared_rel
         self.rel_exp = rel_exp
+        self.diff_thresh = diff_thresh
+        self.rmse_3 = rmse_3
+        self.diff_3 = diff_3
+        self.rmse_6 = rmse_6
+        self.diff_6 = diff_6
         self.lg10 = lg10
         self.delta1 = delta1
         self.delta2 = delta2
@@ -87,10 +100,20 @@ class Result(object):
         # target[target > result] = 0
 
         valid_mask = target > 0.1
+        valid_mask_3 = target <= 3
+        valid_mask_6 = target > 3
 
         # convert from meters to mm
         output_mm = 1e3 * output[valid_mask]
         target_mm = 1e3 * target[valid_mask]
+
+        output_mm_3 = 1e3 * output[valid_mask * valid_mask_3]
+        target_mm_3 = 1e3 * target[valid_mask * valid_mask_3]
+        diff_3 = output_mm_3 - target_mm_3
+
+        output_mm_6 = 1e3 * output[valid_mask * valid_mask_6]
+        target_mm_6 = 1e3 * target[valid_mask * valid_mask_6]
+        diff_6 = output_mm_6 - target_mm_6
 
         abs_diff = (output_mm - target_mm).abs()
 
@@ -103,6 +126,21 @@ class Result(object):
         self.absrel = float((abs_diff / target_mm).mean())
         self.squared_rel = float(((abs_diff / target_mm)**2).mean())
         self.rel_exp = 1e3*float(((output[valid_mask] - target[valid_mask]).abs() / target[valid_mask].exp()).mean())
+        if len(target_mm_3) > 0:
+            self.diff_3 = len(diff_3[diff_3 > 100])/len(diff_3) * 100
+            self.rmse_3 = math.sqrt(float((torch.pow(diff_3, 2)).mean()))
+        else:
+            self.diff_3 = 0
+            self.rmse_3 = 0
+
+        if len(target_mm_6) > 0:
+            self.diff_6 = len(diff_6[diff_6 > 300])/len(diff_6) * 100
+            self.rmse_6 = math.sqrt(float((torch.pow(diff_6, 2)).mean()))
+        else:
+            self.diff_6 = 0
+            self.rmse_6 = 0
+
+        self.diff_thresh = self.diff_3  # + self.diff_6
 
         if rgb is not None:
             gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
@@ -157,6 +195,11 @@ class AverageMeter(object):
         self.sum_absrel = 0
         self.sum_squared_rel = 0
         self.sum_rel_exp = 0
+        self.sum_diff_thresh = 0
+        self.sum_rmse_3 = 0
+        self.sum_diff_3 = 0
+        self.sum_rmse_6 = 0
+        self.sum_diff_6 = 0
         self.sum_lg10 = 0
         self.sum_delta1 = 0
         self.sum_delta2 = 0
@@ -183,6 +226,11 @@ class AverageMeter(object):
         self.sum_absrel += n * result.absrel
         self.sum_squared_rel += n * result.squared_rel
         self.sum_rel_exp += n * result.rel_exp
+        self.sum_diff_thresh += n * result.diff_thresh
+        self.sum_rmse_3 += n * result.rmse_3
+        self.sum_diff_3 += n * result.diff_3
+        self.sum_rmse_6 += n * result.rmse_6
+        self.sum_diff_6 += n * result.diff_6
         self.sum_lg10 += n * result.lg10
         self.sum_delta1 += n * result.delta1
         self.sum_delta2 += n * result.delta2
@@ -206,7 +254,9 @@ class AverageMeter(object):
                 self.sum_irmse / self.count, self.sum_imae / self.count,
                 self.sum_mse / self.count, self.sum_rmse / self.count,
                 self.sum_mae / self.count, self.sum_absrel / self.count,
-                self.sum_squared_rel / self.count, self.sum_rel_exp / self.count, self.sum_lg10 / self.count,
+                self.sum_squared_rel / self.count, self.sum_rel_exp / self.count,
+                self.sum_diff_thresh / self.count, self.sum_rmse_3 / self.count, self.sum_diff_3 / self.count,
+                self.sum_rmse_6 / self.count, self.sum_diff_6 / self.count, self.sum_lg10 / self.count,
                 self.sum_delta1 / self.count, self.sum_delta2 / self.count,
                 self.sum_delta3 / self.count, self.sum_gpu_time / self.count,
                 self.sum_data_time / self.count, self.sum_silog / self.count,

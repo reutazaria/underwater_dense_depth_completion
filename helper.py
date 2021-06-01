@@ -8,8 +8,8 @@ from metrics import Result
 
 fieldnames = [
     'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
-    'rel_exp', 'lg10', 'silog', 'squared_rel', 'delta1', 'delta2', 'delta3', 'data_time',
-    'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
+    'rel_exp', 'diff_thresh', 'rmse_3', 'diff_3', 'rmse_6', 'diff_6', 'lg10', 'silog', 'squared_rel', 'delta1',
+    'delta2', 'delta3', 'data_time', 'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
 ]
 
 
@@ -60,9 +60,14 @@ class logger:
                 'iMAE={blk_avg.imae:.2f}({average.imae:.2f})\n\t'
                 'silog={blk_avg.silog:.2f}({average.silog:.2f}) '
                 'squared_rel={blk_avg.squared_rel:.2f}({average.squared_rel:.2f}) '
-                'Delta1={blk_avg.delta1:.3f}({average.delta1:.3f}) '
-                'REL={blk_avg.absrel:.3f}({average.absrel:.3f})\n\t'
+                'Delta1={blk_avg.delta1:.3f}({average.delta1:.3f})\n\t'
+                'REL={blk_avg.absrel:.3f}({average.absrel:.3f}) '
                 'rel_exp={blk_avg.rel_exp:.3f}({average.rel_exp:.3f}) '
+                'diff_thresh={blk_avg.diff_thresh:.3f}({average.diff_thresh:.3f})\n\t'
+                'rmse_3={blk_avg.rmse_3:.3f}({average.rmse_3:.3f}) '
+                'diff_3={blk_avg.diff_3:.3f}({average.diff_3:.3f}) '
+                'rmse_6={blk_avg.rmse_6:.3f}({average.rmse_6:.3f}) '
+                'diff_6={blk_avg.diff_6:.3f}({average.diff_6:.3f})\n\t'
                 'Lg10={blk_avg.lg10:.3f}({average.lg10:.3f}) '
                 'Avg_target={blk_avg.avg_target:.3f}({average.avg_target:.3f}) '
                 'Avg_pred={blk_avg.avg_pred:.3f}({average.avg_pred:.3f})\n\t'
@@ -112,6 +117,11 @@ class logger:
                 'squared_rel': avg.squared_rel,
                 'absrel': avg.absrel,
                 'rel_exp': avg.rel_exp,
+                'diff_thresh': avg.diff_thresh,
+                'rmse_3': avg.rmse_3,
+                'diff_3': avg.diff_3,
+                'rmse_6': avg.rmse_6,
+                'diff_6': avg.diff_6,
                 'lg10': avg.lg10,
                 'delta1': avg.delta1,
                 'delta2': avg.delta2,
@@ -131,14 +141,17 @@ class logger:
                 ("rank_metric={}\n" + "epoch={}\n" + "rmse={:.3f}\n" +
                  "mae={:.3f}\n" + "silog={:.3f}\n" + "squared_rel={:.3f}\n" +
                  "irmse={:.3f}\n" + "imae={:.3f}\n" + "mse={:.3f}\n" +
-                 "absrel={:.3f}\n" + "rel_exp={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
+                 "absrel={:.3f}\n" + "rel_exp={:.3f}\n" + "diff_thresh={:.3f}\n" + "rmse_3={:.3f}\n" +
+                 "diff_3={:.3f}\n" + "rmse_6={:.3f}\n" + "diff_6={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
                  "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" + "avg_depth_pred={:.3f}\n"
                  "pearson={:.3f}\n" + "pearson_gb={:.3f}").format(self.args.rank_metric, epoch,
                                                                   result.rmse, result.mae, result.silog,
                                                                   result.squared_rel, result.irmse,
                                                                   result.imae, result.mse, result.absrel,
-                                                                  result.rel_exp, result.lg10, result.delta1,
-                                                                  result.gpu_time, result.avg_target, result.avg_pred,
+                                                                  result.rel_exp, result.diff_thresh, result.rmse_3,
+                                                                  result.diff_3, result.rmse_6, result.diff_6,
+                                                                  result.lg10, result.delta1, result.gpu_time,
+                                                                  result.avg_target, result.avg_pred,
                                                                   result.pearson, result.pearson_gb))
 
     def save_best_txt(self, result, epoch):
@@ -226,6 +239,11 @@ class logger:
               'Delta1={average.delta1:.3f}\n'
               'REL={average.absrel:.3f}\n'
               'rel_exp={average.rel_exp:.3f}\n'
+              'diff_thresh={average.diff_thresh:.3f}\n'
+              'rmse_3={average.rmse_3:.3f}\n'
+              'diff_3={average.diff_3:.3f}\n'
+              'rmse_6={average.rmse_6:.3f}\n'
+              'diff_6={average.diff_6:.3f}\n'
               'Lg10={average.lg10:.3f}\n'
               't_GPU={time:.3f}\n'
               'AVG_target={average.avg_target:.3f}\n'
@@ -283,10 +301,10 @@ def get_folder_name(args):
         prefix = "mode={}.".format(args.train_mode)
     return os.path.join(args.result, prefix +
                         'data={}.input={}.resnet{}.epochs{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={'
-                        '}.time={}'.
+                        '}.rank_metric={}.time={}'.
                         format(args.data, args.input, args.layers, args.epochs, args.criterion,
                                args.lr, args.batch_size, args.weight_decay,
-                               args.pretrained, args.jitter, current_time))
+                               args.pretrained, args.jitter, args.rank_metric, current_time))
 
 
 avgpool = torch.nn.AvgPool2d(kernel_size=2, stride=2).cuda()
