@@ -128,7 +128,7 @@ args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
 args.use_g = 'g' in args.input and 'rgb' not in args.input
 if args.use_pose or args.use_corr:
-    args.w1, args.w2 = 0.5, 0.1
+    args.w1, args.w2 = 0.1, 0.1
 else:
     args.w1, args.w2 = 0, 0
 print(args)
