@@ -201,7 +201,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         data_time = time.time() - start
 
         start = time.time()
-        pred = model(batch_data)
+        pred = model(batch_data, args)
         # if args.calc_var:
         #     pred, log_var = model(batch_data, args)
         # else:
@@ -305,8 +305,8 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
     avg = logger.conditional_save_info(mode, average_meter, epoch)
     is_best = logger.rank_conditional_save_best(mode, avg, epoch, args.val)
-    if (is_best and not (mode == "train")) or args.val == 'full':
-        logger.save_img_comparison_as_best(mode, epoch)
+    # if (is_best and not (mode == "train")) or args.val == 'full':
+    #     logger.save_img_comparison_as_best(mode, epoch)
     logger.conditional_summarize(mode, avg, is_best)
 
     return avg, is_best
