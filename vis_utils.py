@@ -50,10 +50,10 @@ def merge_into_col(ele, pred, log_var):
         # depth_im = np.concatenate((depth_im, diff_im), axis=0)
     if 'd' in ele:
         d_im = preprocess_depth(ele['d'][0, ...])
-        d_im_dilate = cv2.dilate(d_im, np.ones((3, 3), np.uint8), iterations=1)
+        d_im_dilate = cv2.dilate(d_im, np.ones((4, 4), np.uint8), iterations=1)
         depth_im = np.concatenate((d_im_dilate, depth_im), axis=0)
     img_list.append(depth_colorize(depth_im))
-    if log_var:
+    if log_var is not False:
         uncertainty_map = preprocess_depth(log_var[0, ...])
         img_list.append(var_colorize(uncertainty_map))
 
