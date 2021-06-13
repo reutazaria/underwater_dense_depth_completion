@@ -144,7 +144,7 @@ class DepthCompletionNet(nn.Module):
                                     stride=stride,
                                     padding=1,
                                     output_padding=1)
-        self.convt1 = convt_bn_relu(in_channels=128,
+        self.convt1 = convt_bn_relu(in_channels=(64 + 64),
                                     out_channels=64,
                                     kernel_size=kernel_size,
                                     stride=1,
@@ -155,6 +155,42 @@ class DepthCompletionNet(nn.Module):
                                    stride=1,
                                    bn=False,
                                    relu=False)
+        # var decoding layers
+        self.convt5_var = convt_bn_relu(in_channels=512,
+                                        out_channels=256,
+                                        kernel_size=kernel_size,
+                                        stride=stride,
+                                        padding=1,
+                                        output_padding=1)
+        self.convt4_var = convt_bn_relu(in_channels=768,
+                                        out_channels=128,
+                                        kernel_size=kernel_size,
+                                        stride=stride,
+                                        padding=1,
+                                        output_padding=1)
+        self.convt3_var = convt_bn_relu(in_channels=(256 + 128),
+                                        out_channels=64,
+                                        kernel_size=kernel_size,
+                                        stride=stride,
+                                        padding=1,
+                                        output_padding=1)
+        self.convt2_var = convt_bn_relu(in_channels=(128 + 64),
+                                        out_channels=64,
+                                        kernel_size=kernel_size,
+                                        stride=stride,
+                                        padding=1,
+                                        output_padding=1)
+        self.convt1_var = convt_bn_relu(in_channels=(64 + 64),
+                                        out_channels=64,
+                                        kernel_size=kernel_size,
+                                        stride=1,
+                                        padding=1)
+        self.convtf_var = conv_bn_relu(in_channels=128,
+                                       out_channels=1,
+                                       kernel_size=1,
+                                       stride=1,
+                                       bn=False,
+                                       relu=False)
 
     def forward(self, x, args):
         # first layer
@@ -196,34 +232,25 @@ class DepthCompletionNet(nn.Module):
 
         # decoder
         # output sigma
-        if args.calc_var:
-            log_var = torch.cat((convt5, conv5), 1)
+        convt5_var = self.convt5_var(conv6)
+        log_var = torch.cat((convt5_var, conv5), 1)
 
-            convt4 = self.convt4(log_var)
-            log_var = torch.cat((convt4, conv4), 1)
+        convt4_var = self.convt4_var(log_var)
+        log_var = torch.cat((convt4_var, conv4), 1)
 
-            convt3 = self.convt3(log_var)
-            log_var = torch.cat((convt3, conv3), 1)
+        convt3_var = self.convt3_var(log_var)
+        log_var = torch.cat((convt3_var, conv3), 1)
 
-            convt2 = self.convt2(log_var)
-            log_var = torch.cat((convt2, conv2), 1)
+        convt2_var = self.convt2_var(log_var)
+        log_var = torch.cat((convt2_var, conv2), 1)
 
-            convt1 = self.convt1(log_var)
-            log_var = torch.cat((convt1, conv1), 1)
+        convt1_var = self.convt1_var(log_var)
+        log_var = torch.cat((convt1_var, conv1), 1)
 
-            log_var = self.convtf(log_var)
+        log_var = self.convtf_var(log_var)
 
         if self.training:
-            # return 100 * y
-            if args.calc_var:
-                return 100 * y, log_var
-            else:
-                return 100 * y
+            return 100 * y, log_var
         else:
             min_distance = 0.5
-            # return F.relu(100 * y - min_distance) + min_distance
-            if args.calc_var:
-                return F.relu(100 * y - min_distance) + min_distance, log_var
-            else:
-                return F.relu(100 * y - min_distance) + min_distance
-            # the miniumm range of Velodyne is around 3 feet ~= 0.9m
+            return F.relu(100 * y - min_distance) + min_distance, log_var
