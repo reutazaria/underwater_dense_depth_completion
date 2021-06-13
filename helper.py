@@ -8,8 +8,8 @@ from metrics import Result
 
 fieldnames = [
     'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
-    'rel_exp', 'diff_thresh', 'rmse_3', 'diff_3', 'rmse_6', 'diff_6', 'lg10', 'silog', 'squared_rel', 'delta1',
-    'delta2', 'delta3', 'data_time', 'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
+    'rel_exp', 'diff_thresh', 'rmse_3', 'diff_3', 'rmse_6', 'diff_6', 'lg10', 'silog', 'squared_rel', 'rel_squared',
+    'delta1', 'delta2', 'delta3', 'data_time', 'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
 ]
 
 
@@ -60,6 +60,7 @@ class logger:
                 'iMAE={blk_avg.imae:.2f}({average.imae:.2f})\n\t'
                 'silog={blk_avg.silog:.2f}({average.silog:.2f}) '
                 'squared_rel={blk_avg.squared_rel:.2f}({average.squared_rel:.2f}) '
+                'rel_squared={blk_avg.rel_squared:.2f}({average.rel_squared:.2f}) '
                 'Delta1={blk_avg.delta1:.3f}({average.delta1:.3f})\n\t'
                 'REL={blk_avg.absrel:.3f}({average.absrel:.3f}) '
                 'rel_exp={blk_avg.rel_exp:.3f}({average.rel_exp:.3f}) '
@@ -115,6 +116,7 @@ class logger:
                 'mse': avg.mse,
                 'silog': avg.silog,
                 'squared_rel': avg.squared_rel,
+                'rel_squared': avg.rel_squared,
                 'absrel': avg.absrel,
                 'rel_exp': avg.rel_exp,
                 'diff_thresh': avg.diff_thresh,
@@ -139,14 +141,14 @@ class logger:
         with open(filename, 'w') as txtfile:
             txtfile.write(
                 ("rank_metric={}\n" + "epoch={}\n" + "rmse={:.3f}\n" +
-                 "mae={:.3f}\n" + "silog={:.3f}\n" + "squared_rel={:.3f}\n" +
+                 "mae={:.3f}\n" + "silog={:.3f}\n" + "squared_rel={:.3f}\n" + "rel_squared={:.3f}\n" +
                  "irmse={:.3f}\n" + "imae={:.3f}\n" + "mse={:.3f}\n" +
                  "absrel={:.3f}\n" + "rel_exp={:.3f}\n" + "diff_thresh={:.3f}\n" + "rmse_3={:.3f}\n" +
                  "diff_3={:.3f}\n" + "rmse_6={:.3f}\n" + "diff_6={:.3f}\n" + "lg10={:.3f}\n" + "delta1={:.3f}\n" +
                  "t_gpu={:.4f}\n" + "avg_depth_tar={:.3f}\n" + "avg_depth_pred={:.3f}\n"
                  "pearson={:.3f}\n" + "pearson_gb={:.3f}").format(self.args.rank_metric, epoch,
                                                                   result.rmse, result.mae, result.silog,
-                                                                  result.squared_rel, result.irmse,
+                                                                  result.squared_rel, result.rel_squared, result.irmse,
                                                                   result.imae, result.mse, result.absrel,
                                                                   result.rel_exp, result.diff_thresh, result.rmse_3,
                                                                   result.diff_3, result.rmse_6, result.diff_6,
@@ -235,6 +237,7 @@ class logger:
               'iRMSE={average.irmse:.3f}\n'
               'iMAE={average.imae:.3f}\n'
               'squared_rel={average.squared_rel}\n'
+              'rel_squared={average.rel_squared}\n'
               'silog={average.silog}\n'
               'Delta1={average.delta1:.3f}\n'
               'REL={average.absrel:.3f}\n'
