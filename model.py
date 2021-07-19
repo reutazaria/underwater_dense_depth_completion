@@ -192,7 +192,7 @@ class DepthCompletionNet(nn.Module):
                                        bn=False,
                                        relu=False)
 
-    def forward(self, x, args):
+    def forward(self, x):
         # first layer
         if 'd' in self.modality:
             conv1_d = self.conv1_d(x['d'])
