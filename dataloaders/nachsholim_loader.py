@@ -13,7 +13,8 @@ import yaml
 
 
 iheight, iwidth = 540, 960  # raw image size
-oheight, owidth = 512, 800
+oheight, owidth = 416, 736  # 352, 640 # 416, 736  # 512, 800
+theight, twidth = 512, 800
 # crop_dims = [(352, 640), (256, 480), (192, 352), (416, 736)]
 # theight, twidth = crop_dims[np.random.randint(0, len(crop_dims) - 1)]
 
@@ -202,7 +203,7 @@ def train_transform(rgb, sparse, target, rgb_near, args):
 
 def val_transform(rgb, sparse, target, rgb_near, args):
     transform = transforms.Compose([
-        transforms.CenterCrop((oheight, owidth)),
+        transforms.CenterCrop((theight, twidth)),
         # transforms.BottomCrop((oheight, owidth)),
     ])
     if rgb is not None:
