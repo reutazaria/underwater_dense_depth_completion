@@ -7,7 +7,7 @@ import vis_utils
 from metrics import Result
 
 fieldnames = [
-    'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'irmse', 'imae', 'mse', 'absrel',
+    'epoch', 'rmse', 'mae', 'loss', 'depth_loss', 'smooth_loss', 'photometric_loss', 'variance_loss', 'irmse', 'imae', 'mse', 'absrel',
     'rel_exp', 'diff_thresh', 'rmse_3', 'diff_3', 'rmse_6', 'diff_6', 'lg10', 'silog', 'squared_rel', 'rel_squared',
     'delta1', 'delta2', 'delta3', 'data_time', 'gpu_time', 'avg_target', 'avg_pred', 'pearson', 'pearson_gb'
 ]
@@ -78,6 +78,7 @@ class logger:
                 'Depth_loss={blk_avg.depth_loss:.3f}({average.depth_loss:.3f}) '
                 'Smooth_loss={blk_avg.smooth_loss:.3f}({average.smooth_loss:.3f}) '
                 'Photometric_loss={blk_avg.photometric_loss:.3f}({average.photometric_loss:.3f}) '
+                'Variance_loss={blk_avg.variance_loss:.3f}({average.variance_loss:.3f}) '
                 .format(epoch,
                         i + 1,
                         n_set,
@@ -111,6 +112,7 @@ class logger:
                 'depth_loss': avg.depth_loss,
                 'smooth_loss': avg.smooth_loss,
                 'photometric_loss': avg.photometric_loss,
+                'variance_loss': avg.variance_loss,
                 'irmse': avg.irmse,
                 'imae': avg.imae,
                 'mse': avg.mse,
@@ -222,7 +224,7 @@ class logger:
             if not os.path.exists(image_folder):
                 os.makedirs(image_folder)
             img = torch.squeeze(var.data.cpu()).numpy()
-            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}.png'.format(i))
+            filename = os.path.join(image_folder, 'epoch_' + str(epoch) + '_{0:010d}.tif'.format(i))
             vis_utils.save_var_image(img, filename)
 
     def conditional_summarize(self, mode, avg, is_best):
@@ -234,6 +236,7 @@ class logger:
               'Depth_loss={average.depth_loss:.3f}\n'
               'Smooth_loss={average.smooth_loss:.3f}\n'
               'Photometric_loss={average.photometric_loss:.3f}\n'
+              'Variance_loss={average.variance_loss:.3f}\n'
               'iRMSE={average.irmse:.3f}\n'
               'iMAE={average.imae:.3f}\n'
               'squared_rel={average.squared_rel}\n'
