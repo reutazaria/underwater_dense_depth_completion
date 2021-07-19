@@ -41,6 +41,7 @@ class Result(object):
         self.depth_loss = 0
         self.smooth_loss = 0
         self.photometric_loss = 0
+        self.variance_loss = 0
 
     def set_to_worst(self):
         self.irmse = np.inf
@@ -65,7 +66,7 @@ class Result(object):
 
     def update(self, irmse, imae, mse, rmse, mae, absrel, squared_rel, rel_squared, rel_exp, diff_thresh, rmse_3,
                diff_3, rmse_6, diff_6, lg10, delta1, delta2, delta3, gpu_time, data_time, silog, avg_target, avg_pred,
-               pearson, pearson_gb, loss=0, depth=0, smooth=0, photometric=0):
+               pearson, pearson_gb, loss=0, depth=0, smooth=0, photometric=0, variance=0):
         self.irmse = irmse
         self.imae = imae
         self.mse = mse
@@ -95,14 +96,15 @@ class Result(object):
         self.depth_loss = depth
         self.smooth_loss = smooth
         self.photometric_loss = photometric
+        self.variance_loss = variance
 
-    def evaluate(self, output, target, rgb, loss=0, depth=0, smooth=0, photometric=0):
+    def evaluate(self, output, target, rgb, loss=0, depth=0, smooth=0, photometric=0, variance=0):
         # k = 1 + round(0.9 * (target.numel() - 1))
         # result = target.view(-1).kthvalue(k).values.item()
 
         # target[target > result] = 0
 
-        valid_mask = target > 0.1
+        valid_mask = target > 0.5
         valid_mask_3 = target <= 3
         valid_mask_6 = target > 3
 
@@ -147,7 +149,7 @@ class Result(object):
             self.diff_6 = 0
             self.rmse_6 = 0
 
-        self.diff_thresh = self.diff_3  # + self.diff_6
+        self.diff_thresh = self.diff_3 + self.diff_6
 
         if rgb is not None:
             gb = torch.max(rgb[:, 2, :, :], rgb[:, 1, :, :]) - rgb[:, 0, :, :]
@@ -186,6 +188,7 @@ class Result(object):
         self.depth_loss = float(depth)
         self.smooth_loss = float(smooth)
         self.photometric_loss = float(photometric)
+        self.variance_loss = float(variance)
 
 
 class AverageMeter(object):
@@ -223,6 +226,7 @@ class AverageMeter(object):
         self.sum_depth_loss = 0
         self.sum_smooth_loss = 0
         self.sum_photometric_loss = 0
+        self.sum_variance_loss = 0
 
     def update(self, result, gpu_time, data_time, n=1):
         self.count += n
@@ -255,6 +259,7 @@ class AverageMeter(object):
         self.sum_depth_loss += n * result.depth_loss
         self.sum_smooth_loss += n * result.smooth_loss
         self.sum_photometric_loss += n * result.photometric_loss
+        self.sum_variance_loss += n * result.variance_loss
 
     def average(self):
         avg = Result()
@@ -272,5 +277,6 @@ class AverageMeter(object):
                 self.sum_avg_target / self.count, self.sum_avg_pred / self.count,
                 self.sum_pearson / self.count, self.sum_pearson_gb / self.count,
                 self.sum_loss / self.count, self.sum_depth_loss / self.count,
-                self.sum_smooth_loss / self.count, self.sum_photometric_loss / self.count)
+                self.sum_smooth_loss / self.count, self.sum_photometric_loss / self.count,
+                self.sum_variance_loss / self.count)
         return avg
