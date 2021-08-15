@@ -182,7 +182,7 @@ class logger:
                 self.img_merge = vis_utils.add_col(self.img_merge, row)
             elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
-                # vis_utils.save_image(self.img_merge, filename)
+                vis_utils.save_image(self.img_merge, filename)
 
     def save_img_comparison_as_best(self, mode, epoch):
         if mode == 'val':
@@ -307,10 +307,10 @@ def get_folder_name(args):
         prefix = "mode={}.".format(args.train_mode)
     return os.path.join(args.result, prefix +
                         'data={}.input={}.resnet{}.epochs{}.criterion={}.lr={}.bs={}.wd={}.pretrained={}.jitter={'
-                        '}.rank_metric={}.time={}'.
+                        '}.rank_metric={}.train_var={}.time={}'.
                         format(args.data, args.input, args.layers, args.epochs, args.criterion,
                                args.lr, args.batch_size, args.weight_decay,
-                               args.pretrained, args.jitter, args.rank_metric, current_time))
+                               args.pretrained, args.jitter, args.rank_metric, not args.without_var, current_time))
 
 
 avgpool = torch.nn.AvgPool2d(kernel_size=2, stride=2).cuda()

@@ -80,8 +80,10 @@ def save_image(img_merge, filename):
 
 
 def save_var_image(img, filename):
-    image_to_write = np.exp(img).astype(np.float)
-    cv2.imwrite(filename, image_to_write)
+    img1 = Image.fromarray(img)
+    img1.save(filename)
+    # image_to_write = img.astype(np.float)
+    # cv2.imwrite(filename, image_to_write)
 
 
 def save_depth_as_uint16png(img, filename):
@@ -89,7 +91,7 @@ def save_depth_as_uint16png(img, filename):
     cv2.imwrite(filename, img)
 
 
-if ("DISPLAY" in os.environ):
+if "DISPLAY" in os.environ:
     f, axarr = plt.subplots(4, 1)
     plt.tight_layout()
     plt.ion()
