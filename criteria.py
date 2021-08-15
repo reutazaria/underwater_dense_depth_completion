@@ -58,7 +58,7 @@ class MaskedTukeyLoss(nn.Module):
         valid_mask = (target > 0).detach()
         diff = (target - pred).abs()
         diff = diff[valid_mask]
-        D_MEL = 0.1 + 0.2 * (1 / (1 + (3 * (3 - target[valid_mask])).exp()))
+        D_MEL = 0.1 + 0.2 * (1 / (1 + (6 * (3 - target[valid_mask])).exp()))
         tukey = torch.where(diff > D_MEL, torch.ones_like(diff), torch.pow(1 - (1-(diff/D_MEL)**2), 3))
         self.loss = tukey.mean()
         return self.loss
