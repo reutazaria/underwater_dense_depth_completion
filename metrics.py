@@ -99,10 +99,6 @@ class Result(object):
         self.variance_loss = variance
 
     def evaluate(self, output, target, rgb, loss=0, depth=0, smooth=0, photometric=0, variance=0):
-        # k = 1 + round(0.9 * (target.numel() - 1))
-        # result = target.view(-1).kthvalue(k).values.item()
-
-        # target[target > result] = 0
 
         valid_mask = target > 0.5
         valid_mask_3 = target <= 3
@@ -129,8 +125,8 @@ class Result(object):
         self.mae = float(abs_diff.mean())
         self.lg10 = float((log10(output_mm) - log10(target_mm)).abs().mean())
         self.absrel = float((abs_diff / target_mm).mean())
-        self.squared_rel = float(((abs_diff / target_mm)**2).mean())
-        # self.squared_rel = float(1e3 * (((output[valid_mask] - target[valid_mask]).abs() / target[valid_mask]) ** 2).mean())
+        # self.squared_rel = float(((abs_diff / target_mm)**2).mean())
+        self.squared_rel = float(1e3 * (((output[valid_mask] - target[valid_mask]).abs() / target[valid_mask]) ** 2).mean())
         # self.rel_squared = float((abs_diff / target_mm ** 2).mean())
         self.rel_squared = float(1e3 * ((output[valid_mask] - target[valid_mask]).abs() / target[valid_mask]**2).mean())
         # self.rel_exp = float((abs_diff / target_mm.exp()).mean())
