@@ -182,7 +182,7 @@ class logger:
                 self.img_merge = vis_utils.add_col(self.img_merge, row)
             elif i == 4 * skip:
                 filename = self._get_img_comparison_name(mode, epoch)
-                vis_utils.save_image(self.img_merge, filename)
+                # vis_utils.save_image(self.img_merge, filename)
 
     def save_img_comparison_as_best(self, mode, epoch):
         if mode == 'val':
