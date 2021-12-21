@@ -11,8 +11,8 @@ from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
 import yaml
 
-iheight, iwidth = 624, 830  # raw image size
-oheight, owidth = 512, 800
+iheight, iwidth = 300, 400  # raw image size
+oheight, owidth = 288, 384
 
 
 def load_calib():
@@ -46,38 +46,38 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/sparse/train/truncate/*.png')
+            'SouthCarolinaCemetery/sparse/uint16/train/*.png')
         glob_gt = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/depthMaps/uint16/train/truncate/*.png')
+            'SouthCarolinaCemetery/gt/uint16/train/*.png')
         glob_rgb = os.path.join(
             args.data_folder,
-            'SouthCarolinaCave/cave_seaerra_lft_to1500/png/train/*.png')
+            'SouthCarolinaCemetery/input/train/*.png')
 
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/sparse/test/truncate/*.png')
+                'SouthCarolinaCemetery/sparse/uint16/test/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/uint16/test/truncate/*.png')
+                'SouthCarolinaCemetery/gt/uint16/test/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                "SouthCarolinaCave/cave_seaerra_lft_to1500/png/test/*.png")
+                "SouthCarolinaCemetery/input/test/*.png")
 
         elif args.val == "select":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/sparse/val/truncate/*.png')
+                'SouthCarolinaCemetery/sparse/uint16/val/*.png')
             glob_gt = os.path.join(
                 args.data_folder,
-                'SouthCarolinaCave/depthMaps/uint16/val/truncate/*.png')
+                'SouthCarolinaCemetery/gt/uint16/val/*.png')
             glob_rgb = os.path.join(
                 args.data_folder,
-                "SouthCarolinaCave/cave_seaerra_lft_to1500/png/val/*.png")
+                "SouthCarolinaCemetery/input/val/*.png")
 
     elif split == "test_completion":
         transform = no_transform
@@ -147,12 +147,11 @@ def depth_read(filename):
     depth_png = np.array(img_file, dtype=int)
     img_file.close()
     # make sure we have a proper 16bit depth map here.. not 8bit!
-    assert np.max(depth_png) > 255, \
+    assert np.max(depth_png) > 0.1*255, \
         "np.max(depth_png)={}, path={}".format(np.max(depth_png), filename)
 
     depth = depth_png.astype(np.float) / 256.
-    # depth = depth_png.astype(np.float)
-    # depth[depth_png == 0] = -1.
+    depth[depth > 3] = 0
     depth = np.expand_dims(depth, -1)
     return depth
 
@@ -269,7 +268,7 @@ def get_rgb_near(path, args):
     return rgb_read(path_near)
 
 
-class CaveDepth(data.Dataset):
+class CemeteryDepth(data.Dataset):
     """A data loader for the South Carolina Cave dataset
     """
 
