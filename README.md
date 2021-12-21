@@ -56,9 +56,11 @@ This file specifies the relevant paths, as well as the input image size
 (since the model is based on a CNN architecture with 5 encoding/decoding layers, the image height and width should be divisible by 32). 
 
 ## Trained Models
+<!---
 Download our trained models at http://datasets.lids.mit.edu/self-supervised-depth-completion to a folder of your choice.
 - supervised training (i.e., models trained with semi-dense lidar ground truth): http://datasets.lids.mit.edu/self-supervised-depth-completion/supervised/
 - self-supervised (i.e., photometric loss + sparse depth loss + smoothness loss): http://datasets.lids.mit.edu/self-supervised-depth-completion/self-supervised/
+--->
 
 ## Commands
 A complete list of training options is available with 
@@ -66,6 +68,7 @@ A complete list of training options is available with
 python main.py -h
 ```
 For instance,
+<!---
 ```bash
 # train with the KITTI semi-dense annotations, rgbd input, and batch size 1
 python main.py --train-mode dense -b 1 --input rgbd
@@ -79,7 +82,7 @@ python main.py --resume [checkpoint-path]
 # test the trained model on the test set
 python main.py --evaluate [checkpoint-path] --val full
 ```
-
+--->
 <!--- ## Citation --->
  <!--- If you use our code or method in your work, please cite the following: --->
 
