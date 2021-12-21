@@ -5,6 +5,7 @@ import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
+
 import criteria
 import helper
 import warnings
@@ -37,8 +38,7 @@ parser.add_argument('-c',
                     metavar='LOSS',
                     default='l2',
                     choices=criteria.loss_names,
-                    help='loss function: | '.join(criteria.loss_names) +
-                         ' (default: l2)')
+                    help='loss function: | '.join(criteria.loss_names) + ' (default: l2)')
 parser.add_argument('-b',
                     '--batch-size',
                     default=1,
@@ -90,7 +90,7 @@ parser.add_argument('--val',
                     type=str,
                     default="select",
                     choices=["select", "full"],
-                    help='full or select validation set')
+                    help='select is used for validation during training | full is used for test mode')
 parser.add_argument('--jitter',
                     type=float,
                     default=0.1,
@@ -99,7 +99,7 @@ parser.add_argument('--rank_metric',
                     type=str,
                     default='rmse',
                     choices=[m for m in dir(Result()) if not m.startswith('_')],
-                    help='metrics for which best result is sbatch_datacted')
+                    help='metric for picking the best result')
 parser.add_argument('-m',
                     '--train-mode',
                     type=str,
@@ -109,8 +109,8 @@ parser.add_argument('-m',
 parser.add_argument('--data',
                     metavar='DATA',
                     default="nachsholim",
-                    choices=['kitti', 'D5', 'nachsholim', 'cave', 'cemetery', 'squid'],
-                    help='kitti | D5 | nachsholim | cave | cemetery | squid')
+                    choices=['nachsholim', 'cemetery', 'squid'],
+                    help='nachsholim | cemetery | squid')
 parser.add_argument('--save_pred',
                     action="store_true",
                     help='save prediction images')
@@ -127,7 +127,7 @@ args.use_rgb = ('rgb' in args.input) or args.use_pose
 args.use_d = 'd' in args.input
 args.use_g = 'g' in args.input and 'rgb' not in args.input
 if args.use_pose or args.use_corr:
-    args.w1, args.w2 = 0.1, 0.1
+    args.w1, args.w2 = 0.5, 0.5
 else:
     args.w1, args.w2 = 0, 0
 print(args)
@@ -144,33 +144,26 @@ print("=> using '{}' for computation.".format(device))
 # define loss functions
 if args.criterion == 'REL':
     depth_criterion = criteria.MaskedRELLoss()
+elif args.criterion == 'l1':
+    depth_criterion = criteria.MaskedL1Loss()
 elif args.criterion == 'Tukey':
     depth_criterion = criteria.MaskedTukeyLoss()
-else:
+else:  # default 'l2'
     depth_criterion = criteria.MaskedMSELoss()
-var_criterion = criteria.VarianceLoss()
+variance_criterion = criteria.VarianceLoss()
 photometric_criterion = criteria.PhotometricLoss()
 smoothness_criterion = criteria.SmoothnessLoss()
 correlation_criterion = criteria.PearsonCorrelationLoss()
 
-if args.data == 'D5':
-    from dataloaders.D5_loader import load_calib, oheight, owidth
-    from dataloaders.D5_loader import D5Depth as Depth
-elif args.data == 'nachsholim':
+if args.data == 'nachsholim':
     from dataloaders.nachsholim_loader import load_calib, oheight, owidth
     from dataloaders.nachsholim_loader import NachsholimDepth as Depth
 elif args.data == 'squid':
     from dataloaders.squid_loader import load_calib, oheight, owidth
     from dataloaders.squid_loader import SQUIDDepth as Depth
-elif args.data == 'cave':
-    from dataloaders.SC_Cave_loader import load_calib, oheight, owidth
-    from dataloaders.SC_Cave_loader import CaveDepth as Depth
 elif args.data == 'cemetery':
     from dataloaders.SC_Cemetery_loader import load_calib, oheight, owidth
     from dataloaders.SC_Cemetery_loader import CemeteryDepth as Depth
-elif args.data == 'kitti':
-    from dataloaders.kitti_loader import load_calib, oheight, owidth
-    from dataloaders.kitti_loader import KittiDepth as Depth
 
 if args.use_pose:
     # hard-coded camera intrinsics
@@ -183,13 +176,12 @@ if args.use_pose:
 
 
 def iterate(mode, args, loader, model, optimizer, logger, epoch):
-    # torch.cuda.empty_cache()
     block_average_meter = AverageMeter()
     average_meter = AverageMeter()
     meters = [block_average_meter, average_meter]
 
     # switch to appropriate mode
-    assert mode in ["train", "val", "eval", "test_prediction", "test_completion"], "unsupported mode: {}".format(mode)
+    assert mode in ["train", "val", "eval"], "unsupported mode: {}".format(mode)
     if mode == 'train':
         model.train()
         lr = helper.adjust_learning_rate(args.lr, optimizer, epoch)
@@ -197,6 +189,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         model.eval()
         lr = 0
 
+    # calculate run-time
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
@@ -204,7 +197,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
     for i, batch_data in enumerate(loader):
         start = time.time()
         batch_data = {key: val.to(device) for key, val in batch_data.items() if val is not None}
-        gt = batch_data['gt'] if mode != 'test_prediction' and mode != 'test_completion' else None
+        gt = batch_data['gt']
         rgb = batch_data['rgb'] if args.use_rgb else None
         data_time = time.time() - start
 
@@ -214,30 +207,30 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
 
         loss, depth_loss, self_loss, smooth_loss, var_loss, mask = 0, 0, 0, 0, 0, None
         if mode == 'train':
-            # Loss 1: the direct depth supervision from ground truth label
+            # Loss 1: the direct depth supervision from ground truth label \ sparse annotations
+            # Loss 2: the variance loss
             # mask=1 indicates that a pixel does not ground truth labels
             if 'sparse' in args.train_mode:
                 depth_loss = depth_criterion(pred, batch_data['d'])
+                var_loss = variance_criterion(pred, log_var, batch_data['d']) if not args.without_var else 0
                 mask = (batch_data['d'] < 1e-3).float()
             elif 'dense' in args.train_mode:
                 depth_loss = depth_criterion(pred, gt)
+                var_loss = variance_criterion(pred, log_var, gt) if not args.without_var else 0
                 mask = (gt < 1e-3).float()
 
-            # Loss 2: the pearson correlation loss
+            # Loss 3: the Pearson correlation loss
             if args.use_corr:
                 if rgb is None:
                     raise (RuntimeError("Requested rgb images for computing correlation loss but none was found"))
                 gb = torch.max(batch_data['rgb'][:, 2, :, :], batch_data['rgb'][:, 1, :, :]) - batch_data['rgb'][:, 0, :, :]
                 gb = gb.unsqueeze(1)
-                self_loss = correlation_criterion(gb, pred)  # , gt)
+                self_loss = correlation_criterion(gb, pred, gt)
             else:
                 self_loss = 0
 
-            # Loss 3: the depth smoothness loss
+            # Loss 4: the depth smoothness loss
             smooth_loss = smoothness_criterion(pred) if args.w2 > 0 else 0
-
-            # Loss 4: the variance loss
-            var_loss = var_criterion(pred, log_var, gt) if not args.without_var else 0
 
             # Loss 5: the self-supervised photometric loss
             if args.use_pose:
@@ -268,9 +261,6 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
             # backprop
             loss = depth_loss + var_loss + args.w1 * self_loss + args.w2 * smooth_loss
             optimizer.zero_grad()
-            # if args.train_var:
-            #     var_loss.backward()
-            # else:
             loss.backward()
             optimizer.step()
 
@@ -278,25 +268,17 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         with torch.no_grad():
             mini_batch_size = next(iter(batch_data.values())).size(0)
             result = Result()
-            if mode != 'test_prediction' and mode != 'test_completion':
-                # var_loss = var_criterion(pred, log_var, gt)
-                if rgb is not None:
-                    result.evaluate(pred.data, gt.data, rgb.data, loss, depth_loss, smooth_loss, self_loss, var_loss)
-                else:
-                    result.evaluate(pred.data, gt.data, None, loss, depth_loss, smooth_loss, self_loss, var_loss)
-                sample_i_rmse = result.rmse
+            rgb_data = rgb.data if rgb is not None else None
+            result.evaluate(pred.data, gt.data, rgb_data, loss, depth_loss, smooth_loss, self_loss, var_loss)
+            sample_i_rmse = result.rmse
             [m.update(result, gpu_time, data_time, mini_batch_size) for m in meters]
             logger.conditional_print(mode, i, epoch, lr, len(loader), block_average_meter, average_meter)
-            if args.data == 'D5':
-                skip = 7
-            elif args.data == 'cave' or args.data == 'cemetery':
-                skip = 70
-            elif args.data == 'nachsholim':
+            if args.data == 'nachsholim':
                 skip = 100
             elif args.data == 'squid':
                 skip = 5
-            elif args.data == 'kitti':
-                skip = 100
+            elif args.data == 'cemetery':
+                skip = 70
             logger.conditional_save_pred(mode, i, pred, epoch, sample_i_rmse)
             logger.conditional_save_img_comparison(mode, i, batch_data, pred, log_var, epoch, skip)
             if args.train_var_branch or args.evaluate:
@@ -332,13 +314,14 @@ def main():
             args.evaluate = args_new.evaluate
             args.save_pred = args_new.save_pred
             args.print_freq = args_new.print_freq
-            # args.train_var_branch = False
+            args.without_var = args_new.without_var
+            args.train_var_branch = args_new.train_var_branch
             is_eval = True
             print("Completed.")
         else:
             print("No model found at '{}'".format(args.evaluate))
             return
-    elif args.train_var_branch:
+    elif args.train_var_branch:  # train only the uncertainty branch of a pre-trained model
         args_new = args
         if os.path.isfile(args.train_var_branch):
             print("=> loading checkpoint '{}' ... ".format(args.train_var_branch), end='')
@@ -375,11 +358,9 @@ def main():
             ct += 1
     model_named_params = [p for _, p in model.named_parameters() if p.requires_grad]
     optimizer = torch.optim.Adam(model_named_params, lr=args.lr, weight_decay=args.weight_decay)
-    print('trainable parameters', sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     if checkpoint is not None:
         model.load_state_dict(checkpoint['model'])
-    if args.train_var_branch or args.resume:
         optimizer.load_state_dict(checkpoint['optimizer'])
         print("=> checkpoint state loaded.")
 
@@ -397,9 +378,9 @@ def main():
         print("=> variance parameters updated.")
         model_named_params = [p for _, p in model.named_parameters() if p.requires_grad]
         optimizer = torch.optim.Adam(model_named_params, lr=args.lr, weight_decay=args.weight_decay)
-        print('trainable parameters', sum(p.numel() for p in model.parameters() if p.requires_grad))
         print("completed.")
 
+    print('trainable parameters', sum(p.numel() for p in model.parameters() if p.requires_grad))
     model = torch.nn.DataParallel(model)
 
     # Data loading code
