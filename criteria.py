@@ -43,7 +43,7 @@ class MaskedRELLoss(nn.Module):
         diff = target - pred
         diff = diff[valid_mask]
         # log_var = log_var[valid_mask]
-        rel = diff.abs() / target[valid_mask].exp()
+        rel = diff.abs() / target[valid_mask]  # .exp()
         # self.loss = ((-log_var).exp() * rel + log_var).mean()
         self.loss = rel.mean()
         return self.loss
@@ -56,7 +56,7 @@ class MaskedTukeyLoss(nn.Module):
     def forward(self, pred, target, weight=None):
         assert pred.dim() == target.dim(), "inconsistent dimensions"
         valid_mask = (target > 0).detach()
-        diff = (target - pred).abs()
+        diff = (pred - target).abs()
         diff = diff[valid_mask]
         D_MEL = 0.1 + 0.2 * (1 / (1 + (6 * (3 - target[valid_mask])).exp()))
         tukey = torch.where(diff > D_MEL, torch.ones_like(diff), torch.pow(1 - (1-(diff/D_MEL)**2), 3))
@@ -138,10 +138,10 @@ class PearsonCorrelationLoss(nn.Module):
     def __init__(self):
         super(PearsonCorrelationLoss, self).__init__()
 
-    def forward(self, gb, pred):
-        # valid_mask = (target == 0).detach()
-        # pred = pred[valid_mask]
-        # gb = gb[valid_mask]
+    def forward(self, gb, pred, target):
+        valid_mask = (target == 0).detach()
+        pred = pred[valid_mask]
+        gb = gb[valid_mask]
         vx = pred - pred.mean()
         vy = gb - gb.mean()
         pearson = (vx * vy).sum() / ((vx ** 2).sum().sqrt() * (vy ** 2).sum().sqrt())
