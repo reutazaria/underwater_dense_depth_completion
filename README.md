@@ -1,59 +1,59 @@
-# self-supervised-depth-completion
+# underwater-dense-depth-completion
 
-This repo is the PyTorch implementation of our ICRA'19 paper on ["Self-supervised Sparse-to-Dense:  Self-supervised Depth Completion from LiDAR and Monocular Camera"](https://arxiv.org/pdf/1807.00275.pdf), developed by [Fangchang Ma](http://www.mit.edu/~fcma/), Guilherme Venturelli Cavalheiro, and [Sertac Karaman](http://karaman.mit.edu/) at MIT. A video demonstration is available on [YouTube](https://youtu.be/bGXfvF261pc).
-
+This repo is the PyTorch implementation of our work  ["Fast Monocular Depth Estimation for Autonomous Underwater Vehicles"](), developed by Reut Azaria and Guy Gilboa at Technion Institute of Technology.
 <p align="center">
-	<img src="https://j.gifs.com/rRrOW4.gif" alt="photo not available" height="50%">
+	<img src="https://raw.githubusercontent.com/reutazaria/underwater_dense_depth_completion/master/movie_depth_Tukey_var.gif" alt="photo not available" height="100%" width="100%">
 </p>
 
-Our network is trained with the KITTI dataset alone, without pretraining on Cityscapes or other similar driving dataset (either synthetic or real). The use of additional data is likely to further improve the accuracy.
-
-Please create a new issue for code-related questions. 
+Our network is trained with the "Nachsholim" dataset alone. The use of additional data is likely to further improve the accuracy.
 
 ## Contents
 1. [Dependency](#dependency)
 0. [Data](#data)
 0. [Trained Models](#trained-models)
 0. [Commands](#commands)
-0. [Citation](#citation)
+<!--- 0. [Citation](#citation) --->
 
 
 ## Dependency
-This code was tested with Python 3 and PyTorch 1.0 on Ubuntu 16.04.
+This code was tested with Python 3 and PyTorch 1.0 on Ubuntu 16.04. 
+For installing the environment download `SelfDepth.yml` file and run the following command:
 ```bash
-pip install numpy matplotlib Pillow
-pip install torch torchvision # pytorch
-
-# for self-supervised training requires opencv, along with the contrib modules
-pip install opencv-contrib-python==3.4.2.16
+conda env create -f SelfDepth.yml
 ```
 
 ## Data
-- Download the [KITTI Depth](http://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_completion) Dataset from their website. Use the following scripts to extract corresponding RGB images from the raw dataset. 
-```bash
-./download/rgb_train_downloader.sh
-./download/rgb_val_downloader.sh
-```
-The downloaded rgb files will be stored in the `../data/data_rgb` folder. The overall code, data, and results directory is structured as follows (updated on Oct 1, 2019)
+The datasets will be stored in the `../data/` folder, divided into sub-directories for every single dataset. 
+Each dataset folder should be divided into gt, rgb and sparse sub-folders containing ground truth depth maps, RGB images, and sparse maps, respectively.
+Each one of the laters should be divided into a test, train, and validation set.
+
+The overall code, data, and result directories are structured as follows:
 ```
 .
-├── self-supervised-depth-completion
+├── underwater-dense-depth-completion
 ├── data
-|   ├── data_depth_annotated
-|   |   ├── train
-|   |   ├── val
-|   ├── data_depth_velodyne
-|   |   ├── train
-|   |   ├── val
-|   ├── depth_selection
-|   |   ├── test_depth_completion_anonymous
-|   |   ├── test_depth_prediction_anonymous
-|   |   ├── val_selection_cropped
-|   └── data_rgb
-|   |   ├── train
-|   |   ├── val
+|   ├── Nachsholim
+|   |   ├── gt
+|   |   |   ├── test
+|   |   |   ├── train
+|   |   |   ├── val
+|   |   ├── rgb
+|   |   |   ├── test
+|   |   |   ├── train
+|   |   |   ├── val
+|   |   ├── sparse
+|   |   |   ├── test
+|   |   |   ├── train
+|   |   |   ├── val
+|   ├── dataset#2
+|   ├── dataset#3
+|   |  
+|   |   
 ├── results
 ```
+Each dataset has its corresponding data loader file, for example `nachsholim_loader.py`.
+This file specifies the relevant paths, as well as the input image size 
+(since the model is based on a CNN architecture with 5 encoding/decoding layers, the image height and width should be divisible by 32). 
 
 ## Trained Models
 Download our trained models at http://datasets.lids.mit.edu/self-supervised-depth-completion to a folder of your choice.
@@ -70,29 +70,16 @@ For instance,
 # train with the KITTI semi-dense annotations, rgbd input, and batch size 1
 python main.py --train-mode dense -b 1 --input rgbd
 
-# train with the self-supervised framework, not using ground truth
-python main.py --train-mode sparse+photo 
+# train with the self-supervised framework without using ground truth
+python main.py --train-mode sparse 
 
 # resume previous training
 python main.py --resume [checkpoint-path] 
 
-# test the trained model on the val_selection_cropped data
-python main.py --evaluate [checkpoint-path] --val select
+# test the trained model on the test set
+python main.py --evaluate [checkpoint-path] --val full
 ```
 
-## Citation
-If you use our code or method in your work, please cite the following:
-
-	@article{ma2018self,
-		title={Self-supervised Sparse-to-Dense: Self-supervised Depth Completion from LiDAR and Monocular Camera},
-		author={Ma, Fangchang and Cavalheiro, Guilherme Venturelli and Karaman, Sertac},
-		booktitle={ICRA},
-		year={2019}
-	}
-	@article{Ma2017SparseToDense,
-		title={Sparse-to-Dense: Depth Prediction from Sparse Depth Samples and a Single Image},
-		author={Ma, Fangchang and Karaman, Sertac},
-		booktitle={ICRA},
-		year={2018}
-	}
+<!--- ## Citation --->
+ <!--- If you use our code or method in your work, please cite the following: --->
 
