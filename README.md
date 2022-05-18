@@ -1,6 +1,6 @@
 # underwater-dense-depth-completion
 
-This repo is the PyTorch implementation of our work  ["Fast Monocular Depth Estimation for Autonomous Underwater Vehicles"](), developed by Reut Azaria and Guy Gilboa at Technion Institute of Technology.
+This repo is the PyTorch implementation of our work  "Fast Monocular Depth Estimation for Autonomous Underwater Vehicles", developed by Reut Azaria and Guy Gilboa at Technion Institute of Technology.
 <p align="center">
 	<img src="https://raw.githubusercontent.com/reutazaria/underwater_dense_depth_completion/master/movie_depth_Tukey_var.gif" alt="photo not available" height="100%" width="100%">
 </p>
@@ -56,6 +56,7 @@ This file specifies the relevant paths, as well as the input image size
 (since the model is based on a CNN architecture with 5 encoding/decoding layers, the image height and width should be divisible by 32). 
 
 ## Trained Models
+For our trained models please reach out.
 <!---
 Download our trained models at http://datasets.lids.mit.edu/self-supervised-depth-completion to a folder of your choice.
 - supervised training (i.e., models trained with semi-dense lidar ground truth): http://datasets.lids.mit.edu/self-supervised-depth-completion/supervised/
@@ -68,13 +69,13 @@ A complete list of training options is available with
 python main.py -h
 ```
 For instance,
-<!---
-```bash
-# train with the KITTI semi-dense annotations, rgbd input, and batch size 1
-python main.py --train-mode dense -b 1 --input rgbd
 
-# train with the self-supervised framework without using ground truth
-python main.py --train-mode sparse 
+```bash
+# train the supervised model on Nachsholim dataset with rgbd input (i.e. RGB images together with sparse annotations), batch size 2, Tukey loss function, and diff_thresh rank-metric.
+python main.py --train-mode dense -b 2 --input rgbd -c Tukey --data nachsholim --rank_metric diff_thresh
+
+# train the self-supervised framework (without using ground truth) on Nachsholim dataset with L2 loss, RMSE rank-metric and learning rate of 0.0001, without training the variance branch.
+python main.py --train-mode sparse -c l2 --data nachsholim --lr 0.0001 --rank_metric rmse --without_var
 
 # resume previous training
 python main.py --resume [checkpoint-path] 
@@ -82,7 +83,8 @@ python main.py --resume [checkpoint-path]
 # test the trained model on the test set
 python main.py --evaluate [checkpoint-path] --val full
 ```
---->
+
+
 <!--- ## Citation --->
  <!--- If you use our code or method in your work, please cite the following: --->
 
